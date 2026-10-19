@@ -48,4 +48,11 @@ Phase 2 พิสูจน์แล้วว่าตั้งภาพแยก
 - อ่าน 10 samples, repair 1 ครั้ง (setter requests 3 ครั้งสำหรับ active 3 จอ), exit code 0 และหยุดเองตามเวลา
 - Snapshot ล่าสุด: primary LG ใช้ local photograph และอีกสองจอใช้ black BMP
 - ไม่มี setter ซ้ำเมื่อ policy ตรงแล้ว หลักฐานอยู่ใน guard-20261019_083144_131-331794f0 ใต้ trial run เดิม
-- ผลนี้ยังไม่ใช่การทดสอบสลับ Virtual Desktop ระหว่าง guard ทำงาน รอผู้ใช้ทดลองด้วยคำสั่ง 120 วินาทีด้านบน
+- ผล smoke test นี้ไม่รวมการสลับ Virtual Desktop; ผล manual test ของผู้ใช้อยู่ด้านล่าง
+
+## ผลผู้ใช้ทดลองสลับ Virtual Desktop
+
+- รอบ guard-20261019_083357_250-c0199a79 ผู้ใช้สลับไป desktop 2 แล้วรอ พบจอรองทั้งสองกลับดำ และกลับ desktop 1 จอรองยังดำ
+- Log บันทึก 20 samples, 2 repairs, elapsed 20.626 วินาที, exit code 0 และ Stopped with Ctrl+C
+- สอดคล้องกับการตั้งกฎกลับขณะ Guard ทำงานทั้งสอง desktop ไม่ใช่หลักฐานว่า Windows จำภาพแยกจอถาวรหลังปิดโปรแกรม
+- ยังไม่ได้วัด latency ของการเปลี่ยนภาพหรือทดสอบ desktop 3; ขั้นถัดไปเก็บ event timing แบบ read-only

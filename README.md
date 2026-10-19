@@ -6,6 +6,8 @@
 
 คำสั่ง Probe เดิมยังอ่านอย่างเดียว [Phase 2 one-shot trial](PHASE2-TRIAL.md) ตั้งภาพแยกจอสำเร็จแต่ภาพถูกตั้งกลับเมื่อสลับ Virtual Desktop จึงเพิ่ม [Console Guard แบบจำกัดเวลาทดลอง](CONSOLE-GUARD-TEST.md) ให้รันเองได้ก่อนเพิ่ม tray/autostart
 
+ขั้นปัจจุบันกำลังวัด [event timing แบบอ่านอย่างเดียว](EVENT-PROBE-TEST.md) เพื่อเลือก trigger ก่อนแก้ Guard รุ่นถัดไป
+
 - C# / .NET 10 (`net10.0-windows`), SDK 10.0.402, ไม่มี NuGet package ภายนอก
 - อ่านจอที่ใช้งานใน Windows session ปัจจุบันผ่าน `EnumDisplayMonitors` และ `GetMonitorInfoW`
 - ระบุ primary จาก `MONITORINFOF_PRIMARY`; ไม่ถือว่า DISPLAY1 เป็น primary เสมอ

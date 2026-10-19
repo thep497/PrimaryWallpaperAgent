@@ -21,16 +21,27 @@ internal static class Program
             Console.WriteLine("  trial-status <plan.json> (reads settings and saves a snapshot)");
             Console.WriteLine("  trial-guard <plan.json> <10-300 seconds> (BOUNDED automatic repair, Ctrl+C to stop)");
             Console.WriteLine("  --self-test-trial (in-memory tests, no Windows setting changes)");
+            Console.WriteLine("Read-only event observer (run from project directory):");
+            Console.WriteLine("  event-probe <3-300 seconds> | --self-test-events");
             Console.WriteLine("Exit codes: 0 = complete snapshot; 1 = fatal error; 2 = incomplete/ambiguous snapshot or invalid arguments.");
             return 0;
         }
-        if (args.Length > 0 && args is not ["--json"] && args is not ["--self-test-trial"] && !args[0].StartsWith("trial-", StringComparison.Ordinal))
+        if (args.Length > 0 && args is not ["--json"] && args is not ["--self-test-trial"] && args is not ["--self-test-events"] &&
+            args[0] != "event-probe" && !args[0].StartsWith("trial-", StringComparison.Ordinal))
         {
             Console.Error.WriteLine("Unknown arguments. Use --help.");
             return 2;
         }
         try
         {
+            if (args is ["--self-test-events"]) return WallpaperEventProbe.Run(3, selfTest: true);
+            if (args.Length > 0 && args[0] == "event-probe")
+            {
+                if (args.Length != 2 || !int.TryParse(args[1], System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture, out var seconds))
+                    throw new ArgumentException("Usage: event-probe <3-300 seconds>");
+                return WallpaperEventProbe.Run(seconds);
+            }
             if (args is ["--self-test-trial"]) return TrialSelfTests.Run();
             if (args.Length > 0 && args[0].StartsWith("trial-", StringComparison.Ordinal)) return WallpaperTrial.Run(args);
             var result = Probe.Capture();
