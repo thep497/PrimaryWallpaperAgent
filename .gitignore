@@ -1,0 +1,16 @@
+# Build output and local SDK state
+bin/
+obj/
+.cli-home/
+.vs/
+*.user
+*.suo
+
+# Machine-specific evidence and proposals contain monitor IDs and personal paths
+snapshots/
+plans/
+
+# Generated wallpaper assets and temporary files
+.local-assets/
+*.log
+*.tmp
