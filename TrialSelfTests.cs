@@ -70,10 +70,49 @@ internal static class TrialSelfTests
         unknownImage.State = unknownImage.State with { Wallpapers = unknownImage.State.Wallpapers.Select(w => w with { WallpaperPath = "user-choice.jpg" }).ToArray() };
         MustThrow(() => WallpaperGuard.RepairIfNeeded(guardPlan, unknownImage.State, unknownImage, _ => { }));
         Assert(unknownImage.Calls == 0, "Guard preserves unknown user-selected images");
+        TestTrayPolicy();
         Console.WriteLine("TRIAL SELF-TESTS PASSED: 1/3/5 displays, restore, partial failure, failed rollback reporting, ignored monitor ID, primary changes before/during apply, unstable topology, changed wallpaper.");
         Console.WriteLine("Tests used an in-memory desktop; no Windows settings were changed.");
         Console.WriteLine("GUARD SELF-TESTS PASSED: drift, no redundant writes, desktop reset, changed primary, display count, unknown-image stop.");
         return 0;
+    }
+
+    private static void TestTrayPolicy()
+    {
+        var images = new PolicyImages("pack-photo.jpg", "unused", "pack-black.bmp", "unused",
+            ["original.jpg", "photo.jpg", "black.bmp"]);
+        foreach (var count in new[] { 1, 3, 5 })
+        {
+            var desktop = new FakeDesktop(count);
+            // A new logon session must not depend on the earlier trial session.
+            desktop.State = desktop.State with { SessionId = 22 };
+            Assert(WallpaperPolicy.Repair(images, desktop.State, desktop, _ => { }), "Tray accepts fresh topology/session");
+            Assert(desktop.State.Wallpapers.All(w => w.WallpaperPath ==
+                (w.IsPrimary == true ? images.PhotoPath : images.BlackPath)), "Tray targets only current primary");
+            var writes = desktop.Calls;
+            Assert(!WallpaperPolicy.Repair(images, desktop.State, desktop, _ => { }) && writes == desktop.Calls,
+                "Tray does not repeat writes on matching state");
+        }
+        var legacy = new FakeDesktop(3);
+        legacy.State = legacy.State with { Wallpapers = legacy.State.Wallpapers.Select(w => w with
+            { WallpaperPath = w.IsPrimary == true ? "photo.jpg" : "black.bmp" }).ToArray() };
+        Assert(WallpaperPolicy.Repair(images, legacy.State, legacy, _ => { }), "Accept known trial assets during migration");
+        legacy.SwitchPrimary();
+        Assert(WallpaperPolicy.Repair(images, legacy.State, legacy, _ => { }), "Tray follows changed primary");
+        var selected = new FakeDesktop(3);
+        selected.State = selected.State with { Wallpapers = selected.State.Wallpapers.Select(w => w with
+            { WallpaperPath = "user-chosen.jpg" }).ToArray() };
+        MustThrow(() => WallpaperPolicy.Repair(images, selected.State, selected, _ => { }));
+        Assert(selected.Calls == 0, "Tray preserves unfamiliar selected image");
+        var mode = new FakeDesktop(3);
+        mode.State = mode.State with { Position = 5 };
+        MustThrow(() => WallpaperPolicy.Repair(images, mode.State, mode, _ => { }));
+        Assert(mode.Calls == 0, "Tray preserves changed wallpaper mode");
+        var failure = new FakeDesktop(3) { FailOnCall = 2 };
+        var original = Plan(failure.State);
+        MustThrow(() => WallpaperPolicy.Repair(images, failure.State, failure, _ => { }));
+        Assert(TrialEngine.Matches(original, failure.State, true), "Tray rolls back a partial setter failure");
+        Console.WriteLine("TRAY POLICY TESTS PASSED: 1/3/5 displays, fresh session, legacy paths, primary change, no repeat writes, user image/mode, rollback.");
     }
 
     private static TrialPlan Plan(ProbeResult before) => new(1, "test", "original.jpg", "photo.jpg", "unused", "black.bmp", "unused", before);

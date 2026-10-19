@@ -90,6 +90,6 @@ internal static class Program
         Console.WriteLine($"Background RGB: {result.BackgroundRgb ?? "unknown"} | Position: {position} ({result.Position}) | Slideshow status flags: {result.SlideshowStatus}");
         foreach (var issue in result.Issues) Console.WriteLine($"REVIEW: {issue}");
         Console.WriteLine(result.Complete ? "RESULT: PASS - all active displays mapped by device path." : "RESULT: REVIEW - snapshot is incomplete or ambiguous.");
-        Console.WriteLine("Virtual Desktop behavior: see VIRTUAL-DESKTOP-TEST.md; this output is one read-only snapshot. No watcher/tray/autostart is installed.");
+        Console.WriteLine("Virtual Desktop behavior: see VIRTUAL-DESKTOP-TEST.md; this output is one read-only snapshot. This probe does not start a watcher/tray/autostart.");
     }
 }

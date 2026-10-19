@@ -14,3 +14,4 @@ plans/
 .local-assets/
 *.log
 *.tmp
+artifacts/
