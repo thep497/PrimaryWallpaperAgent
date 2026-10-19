@@ -17,8 +17,9 @@ internal static class ConfigWorkflow
         TrialPlan? plan = null;
         if (applyWallpaper)
         {
-            var before = desktop.Capture();
-            _ = TrialEngine.Active(before);
+            ProbeResult before;
+            try { before = desktop.Capture(); _ = TrialEngine.Active(before); }
+            catch (Exception error) { throw new UiMessageException("DisplayReadFailed", error); }
             if (before.Position != 4 || before.SlideshowStatus != 1) throw new UiMessageException("PictureFillRequired");
             plan = new(1, "config", images.PhotoPath, images.PhotoPath, images.PhotoSha256, images.BlackPath, images.BlackSha256, before);
         }

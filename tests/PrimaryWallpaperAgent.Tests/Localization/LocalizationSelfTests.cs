@@ -38,7 +38,7 @@ internal static class LocalizationSelfTests
             foreach (var language in new[] { "th", "en" })
                 Assert(!string.IsNullOrWhiteSpace(UiText.T(key, language, "status", 3)), "Resource formats: " + key);
         }
-        Assert(UiText.T("Cancel", "unsupported") == "Cancel", "Unsupported language uses English fallback");
+        Assert(UiText.T("Close", "unsupported") == "Close", "Unsupported language uses English fallback");
         Assert(UiText.Normalize("th-TH") == "th" && UiText.Normalize("en-US") == "en", "Known language variants normalize");
         var legacy = JsonNode.Parse(original)!.AsObject();
         legacy.Remove("Language");
@@ -78,10 +78,10 @@ internal static class LocalizationSelfTests
             { form.DrawToBitmap(bitmap, new Rectangle(0, 0, form.Width, form.Height)); bitmap.Save(Path.Combine(folder, "config-" + language + ".png"), ImageFormat.Png); }
             var selector = Control<ComboBox>(form, "LanguageSelector");
             selector.SelectedIndex = language == "th" ? 1 : 0;
-            Assert(Control<Button>(form, "SaveButton").Text == UiText.T("SaveSettings", language == "th" ? "en" : "th"),
-                "Language-only action is labeled Save settings");
-            Control<Button>(form, "CancelButton").PerformClick();
-            Assert(saves == 0 && store.Read().SequenceEqual(englishBytes), "Preview and cancel do not persist language");
+            Assert(form.Text == UiText.Title("ConfigTitle", language == "th" ? "en" : "th") && saves == 1,
+                "Language applies immediately while Settings stays open");
+            Control<Button>(form, "CloseButton").PerformClick();
+            Assert(saves == 1 && store.Read().SequenceEqual(englishBytes), "Close adds no extra save; mock callback does not touch fixture store");
         }
 
         ConfigSubmission? submitted = null;
@@ -89,7 +89,6 @@ internal static class LocalizationSelfTests
         {
             form.Show(); Application.DoEvents();
             Control<ComboBox>(form, "LanguageSelector").SelectedIndex = 1;
-            Control<Button>(form, "SaveButton").PerformClick();
         }
         Assert(submitted is { Language: "en", ApplyWallpaper: false }, "Language-only UI save requests no wallpaper apply");
         using (var form = Form(selected, "th", request => submitted = request, fixture))
@@ -97,8 +96,6 @@ internal static class LocalizationSelfTests
             form.Show(); Application.DoEvents();
             Control<ComboBox>(form, "LanguageSelector").SelectedIndex = 1;
             Control<Button>(form, "UseCurrentButton").PerformClick();
-            Assert(Control<Button>(form, "SaveButton").Text == UiText.T("SaveApply", "en"), "Explicit image selection requests apply");
-            Control<Button>(form, "SaveButton").PerformClick();
         }
         Assert(submitted is { Language: "en", ApplyWallpaper: true }, "Image adoption still works with a language change");
 
@@ -110,7 +107,8 @@ internal static class LocalizationSelfTests
             Control<Button>(form, "UseCurrentButton").PerformClick();
             Assert(Control<Label>(form, "FeedbackLabel").Text == UiText.T("ImageReadFailed", "en"), "Image errors use preview language");
             Control<ComboBox>(form, "LanguageSelector").SelectedIndex = 0;
-            Assert(Control<Label>(form, "FeedbackLabel").Text == UiText.T("ImageReadFailed", "th"), "Visible errors switch language too");
+            Control<Button>(form, "UseCurrentButton").PerformClick();
+            Assert(Control<Label>(form, "FeedbackLabel").Text == UiText.T("ImageReadFailed", "th"), "Image errors use the newly applied language");
             form.Close();
         }
         Assert(CultureInfo.CurrentCulture.Name == culture && CultureInfo.CurrentUICulture.Name == uiCulture,
@@ -120,9 +118,9 @@ internal static class LocalizationSelfTests
             Passed = true, ResourceKeysPerLanguage = englishKeys.Length, NativeWallpaperCalls = forbidden.Calls,
             RegistryWrites = startup.Writes, ScreenshotLanguages = new[] { "th", "en" },
             Tests = new[] { "resource parity/fallback", "legacy Thai default", "persist English", "preference-only no desktop access",
-                "rollback exact settings bytes", "preview/cancel", "UI request mode", "localized errors", "culture unchanged" }
+                "rollback exact settings bytes", "immediate language/close", "UI request mode", "localized errors", "culture unchanged" }
         }, SettingsStore.JsonOptions));
-        Console.WriteLine("LOCALIZATION TESTS PASSED: Thai/English resources, preview/cancel, preferences-only save, rollback, UI labels/errors and unchanged data culture.");
+        Console.WriteLine("LOCALIZATION TESTS PASSED: Thai/English resources, immediate language/close, preferences-only save, rollback, UI labels/errors and unchanged data culture.");
         return 0;
     }
 

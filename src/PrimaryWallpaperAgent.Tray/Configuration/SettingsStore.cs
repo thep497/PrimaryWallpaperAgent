@@ -6,7 +6,7 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed record TrayConfig(int SchemaVersion, string PhotoFile, string PhotoSha256,
     string BlackFile, string BlackSha256, string[] AcceptedPaths, bool StartWithWindows = false,
-    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs);
+    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs, bool HasChosenImage = true);
 
 internal sealed record SelectedImage(string SourcePath, byte[] Bytes, string Extension, string Sha256, string? FriendlyName = null)
 {

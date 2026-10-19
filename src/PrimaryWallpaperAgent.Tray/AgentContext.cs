@@ -6,21 +6,21 @@ namespace PrimaryWallpaperAgent.Tray;
 internal sealed class AgentContext : ApplicationContext
 {
     private readonly SettingsStore store;
-    private TrayConfig config;
-    private byte[] configBytes;
-    private PolicyImages images;
-    private readonly IStartupRegistration startup = new StartupRegistration();
+    private readonly LiveSettings liveSettings;
+    private TrayConfig config => liveSettings.Config;
+    private PolicyImages images => liveSettings.Images;
+    private readonly IStartupRegistration startup;
     private readonly bool smoke;
-    private readonly NativeTrialDesktop desktop = new();
+    private readonly ITrialDesktop desktop;
     private readonly NotifyIcon icon;
     private readonly TrayIconSet trayIcons = new();
     private readonly ContextMenuStrip menu = new();
-    private readonly ToolStripMenuItem status = new() { Enabled = false };
-    private readonly ToolStripMenuItem toggle = new();
-    private readonly ToolStripMenuItem settingsItem = new();
-    private readonly ToolStripMenuItem checkItem = new();
-    private readonly ToolStripMenuItem logItem = new();
-    private readonly ToolStripMenuItem exitItem = new();
+    internal ContextMenuStrip TrayMenu => menu;
+    private readonly ToolStripMenuItem status = new() { Name = "StatusItem", Enabled = false };
+    private readonly ToolStripMenuItem toggle = new() { Name = "PauseResumeItem" };
+    private readonly ToolStripMenuItem settingsItem = new() { Name = "SettingsItem" };
+    private readonly ToolStripMenuItem logItem = new() { Name = "LogItem" };
+    private readonly ToolStripMenuItem exitItem = new() { Name = "ExitItem" };
     private readonly System.Windows.Forms.Timer timer = new();
     private readonly Stopwatch uptime = Stopwatch.StartNew();
     private readonly Queue<TimeSpan> repairs = new();
@@ -36,20 +36,22 @@ internal sealed class AgentContext : ApplicationContext
     private int failures;
     private int samples;
     private int repairCount;
+    private int? displayCount;
 
-    internal AgentContext(SettingsStore store, TrayConfig config, byte[] configBytes, bool smoke, bool showConfig)
+    internal AgentContext(SettingsStore store, TrayConfig config, byte[] configBytes, bool smoke, bool showConfig, ITrialDesktop? desktopOverride = null, IStartupRegistration? startupOverride = null)
     {
         this.store = store;
-        this.config = config;
-        this.configBytes = configBytes;
-        images = store.Images(config);
+        desktop = desktopOverride ?? new NativeTrialDesktop();
+        startup = startupOverride ?? new StartupRegistration();
+        liveSettings = new LiveSettings(store, config, configBytes, startup, desktop, Log, Save);
         this.smoke = smoke;
         openOnFirstTick = showConfig;
+        if (!config.HasChosenImage) statusKey = "StatusChooseImage";
         timer.Interval = PollingOptions.Validate(config.PollIntervalMs);
-        logFolder = Path.Combine(AppContext.BaseDirectory, "runtime", DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..8]);
+        logFolder = Path.Combine(store.Root, "runtime", DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(logFolder);
         logPath = Path.Combine(logFolder, "agent.log");
-        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v0.2; two stable samples; startup writes only on Config Save");
+        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v0.3; two stable samples; startup writes only on explicit setting changes");
         Log("UI_LANGUAGE_LOADED language=" + config.Language);
         Log("POLL_INTERVAL_LOADED milliseconds=" + timer.Interval);
         menu.Items.Add(status);
@@ -58,12 +60,10 @@ internal sealed class AgentContext : ApplicationContext
         menu.Items.Add(settingsItem);
         toggle.Click += (_, _) => Toggle();
         menu.Items.Add(toggle);
-        checkItem.Click += (_, _) => { previous = null; if (!paused) Tick(); };
-        menu.Items.Add(checkItem);
         logItem.Click += (_, _) => OpenLog();
         menu.Items.Add(logItem);
         menu.Items.Add(new ToolStripSeparator());
-        exitItem.Click += (_, _) => ExitThread();
+        exitItem.Click += (_, _) => { if (!liveSettings.IsApplying) ExitThread(); };
         menu.Items.Add(exitItem);
         icon = new NotifyIcon { Icon = trayIcons.Running, ContextMenuStrip = menu, Visible = true };
         icon.DoubleClick += (_, _) => ShowConfig();
@@ -76,20 +76,21 @@ internal sealed class AgentContext : ApplicationContext
     private void Tick()
     {
         if (smoke && uptime.Elapsed.TotalMilliseconds >= PollingOptions.SmokeDurationMs(config.PollIntervalMs)) { ExitThread(); return; }
-        if (configForm is not null) return;
+        if (liveSettings.IsApplying) return;
         if (openOnFirstTick) { openOnFirstTick = false; ShowConfig(); return; }
-        if (paused) return;
+        if (paused || !config.HasChosenImage) return;
         ProbeResult snapshot;
         try
         {
             snapshot = desktop.Capture();
             samples++;
-            _ = TrialEngine.Active(snapshot);
+            displayCount = TrialEngine.Active(snapshot).Length;
             failures = 0;
         }
         catch (Exception error)
         {
             previous = null;
+            displayCount = null;
             if (++failures >= 10) Pause(error);
             else { Log("WAIT " + error.Message); SetStatus("StatusWaiting"); }
             return;
@@ -129,8 +130,8 @@ internal sealed class AgentContext : ApplicationContext
 
     private void Toggle()
     {
-        if (smoke) return;
-        if (paused && needsConfig) { ShowConfig(); return; }
+        if (smoke || liveSettings.IsApplying) return;
+        if (!config.HasChosenImage || paused && needsConfig) { ShowConfig(); return; }
         if (!paused) { paused = true; Log("PAUSED by user"); }
         else
         {
@@ -166,68 +167,78 @@ internal sealed class AgentContext : ApplicationContext
         }
         try
         {
-            if (!store.Read().SequenceEqual(configBytes)) throw new UiMessageException("SettingsChanged");
-            var startupAtOpen = startup.Read();
-            var wasPaused = paused;
-            int? displayCount = null;
+            var startupEnabled = liveSettings.BeginSession();
             try { displayCount = TrialEngine.Active(desktop.Capture()).Length; }
-            catch (Exception error) { Log("CONFIG_DISPLAY_WAIT " + error.Message); }
+            catch (Exception error) { displayCount = null; Log("CONFIG_DISPLAY_WAIT " + error.Message); }
             string ConfigurationStatus(string language)
             {
                 var currentStatus = UiText.T(statusKey, language, statusArgs);
-                return displayCount is { } count ? UiText.T("ConfigStatus", language, currentStatus, count) :
-                    UiText.T("ConfigStatusWaiting", language, currentStatus);
+                return displayCount is { } count && statusArgs.Length == 0 ? UiText.T("ConfigStatus", language, currentStatus, count) :
+                    currentStatus;
             }
-            var initial = SelectedImage.Read(store.Asset(config.PhotoFile, config.PhotoSha256));
-            if (config.PhotoLabel is not null) initial = initial with { FriendlyName = config.PhotoLabel };
-            using var form = new ConfigForm(initial, startupAtOpen is not null, ConfigurationStatus, CurrentPrimaryPath, request =>
+            using var form = new ConfigForm(liveSettings.CurrentImage(), startupEnabled, ConfigurationStatus, CurrentPrimaryPath, request =>
             {
+                var oldInterval = config.PollIntervalMs;
                 try
                 {
-                    var candidate = request.ApplyWallpaper ? store.Prepare(config, request.Image, request.StartWithWindows) :
-                        config with { StartWithWindows = request.StartWithWindows };
-                    candidate = candidate with { Language = UiText.Normalize(request.Language), PollIntervalMs = PollingOptions.Validate(request.PollIntervalMs) };
-                    var candidateImages = request.ApplyWallpaper ? store.Images(candidate) : images;
-                    var id = "config-" + Guid.NewGuid().ToString("N")[..8];
-                    ConfigWorkflow.Apply(candidate, candidateImages, configBytes, startupAtOpen, store, startup,
-                        desktop, Log, (name, value) => Save(id + "-" + name + ".json", value), request.ApplyWallpaper);
-                    config = candidate;
-                    timer.Interval = config.PollIntervalMs;
-                    images = candidateImages;
-                    configBytes = JsonSerializer.SerializeToUtf8Bytes(candidate, SettingsStore.JsonOptions);
-                    if (request.ApplyWallpaper)
-                    {
-                        paused = false; needsConfig = false; failures = 0; previous = null; repairs.Clear();
-                        SetStatus("StatusSaved");
-                    }
-                    else RenderChrome(); // Preserve pause state and the selected wallpaper.
-                    Log("UI_LANGUAGE_SAVED language=" + config.Language + "; applyWallpaper=" + request.ApplyWallpaper);
-                    Log("POLL_INTERVAL_SAVED milliseconds=" + timer.Interval);
+                    liveSettings.Apply(request);
+                    AcceptSettingsChange(request.ApplyWallpaper, oldInterval);
                 }
-                catch (Exception error) { Pause(error, requireConfig: true); throw; }
-            }, OpenLog, config.Language, error => Log("CONFIG_UI_ERROR " + error), config.PollIntervalMs);
+                catch (Exception error) { ConfigurationFailed(error); throw; }
+            }, OpenLog, config.Language, error => Log("CONFIG_UI_ERROR " + error), config.PollIntervalMs,
+            undoImage: () =>
+            {
+                var oldInterval = config.PollIntervalMs;
+                try
+                {
+                    var image = liveSettings.UndoImage();
+                    AcceptSettingsChange(wallpaperApplied: true, oldInterval);
+                    return image;
+                }
+                catch (Exception error) { ConfigurationFailed(error); throw; }
+            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
-            Log("CONFIG_REQUESTED; preview only until Save");
-            var result = form.ShowDialog();
-            if (result != DialogResult.OK)
-            {
-                Log("CONFIG_CLOSED without a successful Save");
-                if (wasPaused || needsConfig) paused = true;
-            }
+            Log("CONFIG_REQUESTED; settings apply immediately; display checks continue");
+            form.ShowDialog();
+            Log("CONFIG_CLOSED; committed settings retained");
         }
         catch (Exception error)
         {
             Log("CONFIG_OPEN_ERROR " + error);
             MessageBox.Show(UiText.Error(error, config.Language), UiText.T("ConfigErrorTitle", config.Language), MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
-        finally { configForm = null; previous = null; }
+        finally { configForm = null; }
+    }
+
+    private void AcceptSettingsChange(bool wallpaperApplied, int oldInterval)
+    {
+        if (timer.Interval != config.PollIntervalMs) timer.Interval = config.PollIntervalMs;
+        if (oldInterval != config.PollIntervalMs) previous = null;
+        if (wallpaperApplied)
+        {
+            paused = false; needsConfig = false; failures = 0; previous = null; repairs.Clear();
+            SetStatus("StatusSaved");
+        }
+        else RenderChrome(); // Preference edits preserve pause/error state.
+        Log("SETTINGS_APPLIED language=" + config.Language + "; pollMilliseconds=" + timer.Interval + "; wallpaperApplied=" + wallpaperApplied);
+    }
+
+    private void ConfigurationFailed(Exception error)
+    {
+        Log("CONFIG_CHANGE_ERROR " + error);
+        // A rolled-back preference/image failure does not itself stop a healthy watcher.
+        // Incomplete recovery or an externally edited settings file needs intervention.
+        if (error is AggregateException || error is UiMessageException { Key: "SettingsChanged" })
+            Pause(error, requireConfig: true);
     }
 
     private string CurrentPrimaryPath()
     {
-        var current = TrialEngine.Active(desktop.Capture()).Single(w => w.IsPrimary == true);
+        WallpaperInfo current;
+        try { current = TrialEngine.Active(desktop.Capture()).Single(w => w.IsPrimary == true); }
+        catch (Exception error) { throw new UiMessageException("DisplayReadFailed", error); }
         if (string.IsNullOrWhiteSpace(current.WallpaperPath)) throw new UiMessageException("PrimaryImageMissing");
         return current.WallpaperPath;
     }
@@ -236,13 +247,13 @@ internal sealed class AgentContext : ApplicationContext
     {
         string T(string key) => UiText.T(key, config.Language);
         settingsItem.Text = T("MenuSettings");
-        checkItem.Text = T("MenuCheck");
         logItem.Text = T("MenuLog");
         exitItem.Text = T("MenuExit");
-        toggle.Text = T(paused ? needsConfig ? "MenuChooseResume" : "MenuResume" : "MenuPause");
+        toggle.Text = T(!config.HasChosenImage ? "MenuChooseResume" : paused ? needsConfig ? "MenuChooseResume" : "MenuResume" : "MenuPause");
         status.Text = UiText.T(statusKey, config.Language, statusArgs);
         icon.Text = UiText.AppName + " — " + status.Text;
-        icon.Icon = paused ? needsConfig || statusKey == "StatusPausedError" ? trayIcons.Attention : trayIcons.Paused : trayIcons.Running;
+        icon.Icon = !config.HasChosenImage ? trayIcons.Attention : paused ? needsConfig || statusKey == "StatusPausedError" ? trayIcons.Attention : trayIcons.Paused : trayIcons.Running;
+        configForm?.RefreshAgentState();
     }
     private void Log(string message) => File.AppendAllText(logPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
     private void Save(string name, object value) => File.WriteAllText(Path.Combine(logFolder, name),

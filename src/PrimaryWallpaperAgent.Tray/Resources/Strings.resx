@@ -1,74 +1,247 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
-  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
-  <resheader name="version"><value>2.0</value></resheader>
-  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
-  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
-  <data name="ConfigTitle" xml:space="preserve"><value>Settings</value></data>
-  <data name="ConfigHeading" xml:space="preserve"><value>Wallpaper settings</value></data>
-  <data name="ConfigPolicy" xml:space="preserve"><value>Follow Windows Primary automatically · all other displays stay black</value></data>
-  <data name="LanguageLabel" xml:space="preserve"><value>Language</value></data>
-  <data name="LanguageHint" xml:space="preserve"><value>Choose a language to preview. Save to apply it to the tray and notifications.</value></data>
-  <data name="StartupCheck" xml:space="preserve"><value>Start with Windows for this account</value></data>
-  <data name="SaveApply" xml:space="preserve"><value>Save and apply image</value></data>
-  <data name="SaveSettings" xml:space="preserve"><value>Save settings</value></data>
-  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="ViewLog" xml:space="preserve"><value>View log</value></data>
-  <data name="Browse" xml:space="preserve"><value>Choose image…</value></data>
-  <data name="UseCurrent" xml:space="preserve"><value>Use current primary image</value></data>
-  <data name="ImageNotes" xml:space="preserve"><value>JPG / PNG / BMP · Fill may crop the image edges.
-Previewing does not change the wallpaper. Apply it when ready.
-One static image is shared across virtual desktops. Spotlight is not supported.</value></data>
-  <data name="PickerTitle" xml:space="preserve"><value>Choose primary wallpaper</value></data>
-  <data name="PickerFilter" xml:space="preserve"><value>Images (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp</value></data>
-  <data name="MenuSettings" xml:space="preserve"><value>Settings…</value></data>
-  <data name="MenuPause" xml:space="preserve"><value>Pause</value></data>
-  <data name="MenuResume" xml:space="preserve"><value>Resume</value></data>
-  <data name="MenuChooseResume" xml:space="preserve"><value>Choose image and resume…</value></data>
-  <data name="MenuCheck" xml:space="preserve"><value>Check wallpaper again</value></data>
-  <data name="MenuLog" xml:space="preserve"><value>Open activity log</value></data>
-  <data name="MenuExit" xml:space="preserve"><value>Exit (keep current wallpaper)</value></data>
-  <data name="StatusChecking" xml:space="preserve"><value>Checking displays…</value></data>
-  <data name="StatusWaiting" xml:space="preserve"><value>Waiting for Windows displays…</value></data>
-  <data name="StatusStable" xml:space="preserve"><value>Waiting for stable displays · {0}</value></data>
-  <data name="StatusReading" xml:space="preserve"><value>Read-only test · displays: {0}</value></data>
-  <data name="StatusRunning" xml:space="preserve"><value>Running · displays: {0}</value></data>
-  <data name="StatusPaused" xml:space="preserve"><value>Paused</value></data>
-  <data name="StatusPausedNew" xml:space="preserve"><value>Paused · new wallpaper or mode</value></data>
-  <data name="StatusPausedError" xml:space="preserve"><value>Paused · check activity log</value></data>
-  <data name="StatusSaved" xml:space="preserve"><value>Image saved · checking displays</value></data>
-  <data name="ConfigStatus" xml:space="preserve"><value>{0} · displays: {1}
-Automatic wallpaper changes are paused while Settings is open.</value></data>
-  <data name="ConfigStatusWaiting" xml:space="preserve"><value>{0} · waiting for displays
-Automatic wallpaper changes are paused while Settings is open.</value></data>
-  <data name="PausedTitle" xml:space="preserve"><value>Wallpaper agent paused</value></data>
-  <data name="PausedNewMessage" xml:space="preserve"><value>A different image or mode was found. Open Settings to choose the image and apply it.</value></data>
-  <data name="PausedErrorMessage" xml:space="preserve"><value>Open the activity log from the tray menu, then resume when ready.</value></data>
-  <data name="StartupErrorTitle" xml:space="preserve"><value>Unable to start</value></data>
-  <data name="ConfigErrorTitle" xml:space="preserve"><value>Unable to open Settings</value></data>
-  <data name="LogErrorTitle" xml:space="preserve"><value>Unable to open log</value></data>
-  <data name="GenericError" xml:space="preserve"><value>The action could not be completed. Check the activity log for details.</value></data>
-  <data name="ImageReadFailed" xml:space="preserve"><value>Unable to read the image. Check the file and try again.</value></data>
-  <data name="ImageTooLarge" xml:space="preserve"><value>Choose an image no larger than 32 MB.</value></data>
-  <data name="ImageTooManyPixels" xml:space="preserve"><value>Choose an image with no more than 40 million pixels.</value></data>
-  <data name="ImageFormatUnsupported" xml:space="preserve"><value>Only static JPG, PNG and BMP images are supported.</value></data>
-  <data name="InvalidSettings" xml:space="preserve"><value>The settings file is invalid or unsupported. Check the activity log.</value></data>
-  <data name="AssetLocationInvalid" xml:space="preserve"><value>The saved image must be inside this app's assets folder.</value></data>
-  <data name="AssetHashChanged" xml:space="preserve"><value>The saved image has changed. Choose it again in Settings.</value></data>
-  <data name="SettingsChanged" xml:space="preserve"><value>Settings were changed outside this app. Close and reopen the app before saving.</value></data>
-  <data name="StartupChanged" xml:space="preserve"><value>Startup settings changed while this window was open. Reopen Settings before saving.</value></data>
-  <data name="PictureFillRequired" xml:space="preserve"><value>Set Windows background to Picture and Fill first. Spotlight and slideshow are not supported.</value></data>
-  <data name="SettingsReadbackFailed" xml:space="preserve"><value>The saved settings could not be verified.</value></data>
-  <data name="StartupReadbackFailed" xml:space="preserve"><value>The startup registration could not be verified.</value></data>
-  <data name="SaveRestored" xml:space="preserve"><value>Saving failed. Changes made during this attempt were restored.</value></data>
-  <data name="RestoreIncomplete" xml:space="preserve"><value>Saving failed and some changes could not be restored. The agent is paused; check the log.</value></data>
-  <data name="StartupValueType" xml:space="preserve"><value>The startup entry has an unexpected format. Check the log.</value></data>
-  <data name="StartupCommandTooLong" xml:space="preserve"><value>The startup command is too long for Windows.</value></data>
-  <data name="WindowRevealFailed" xml:space="preserve"><value>Windows did not show Settings. Close and reopen the app.</value></data>
-  <data name="PrimaryImageMissing" xml:space="preserve"><value>The primary display has no image file to select.</value></data>
-  <data name="WindowTestStatus" xml:space="preserve"><value>Window visibility test</value></data>
-  <data name="PollLabel" xml:space="preserve"><value>Check displays</value></data>
-  <data name="PollOption" xml:space="preserve"><value>Every {0:0.#} s</value></data>
-  <data name="PollHint" xml:space="preserve"><value>1 second is recommended. Shorter intervals check more often; longer intervals respond more slowly. Display changes must match in two consecutive checks.</value></data>
-  <data name="InvalidPollInterval" xml:space="preserve"><value>Choose a supported check interval: 0.5, 1, 2 or 5 seconds.</value></data>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="ConfigTitle" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="ConfigHeading" xml:space="preserve">
+    <value>Wallpaper settings</value>
+  </data>
+  <data name="ConfigPolicy" xml:space="preserve">
+    <value>Follow Windows Primary automatically · all other displays stay black</value>
+  </data>
+  <data name="LanguageLabel" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="LanguageHint" xml:space="preserve">
+    <value>Changes take effect and are saved immediately.</value>
+  </data>
+  <data name="StartupCheck" xml:space="preserve">
+    <value>Start with Windows</value>
+  </data>
+  <data name="ViewLog" xml:space="preserve">
+    <value>View log</value>
+  </data>
+  <data name="Browse" xml:space="preserve">
+    <value>Choose image…</value>
+  </data>
+  <data name="UseCurrent" xml:space="preserve">
+    <value>Use primary image</value>
+  </data>
+  <data name="ImageNotes" xml:space="preserve">
+    <value>JPG / PNG / BMP · Fill may crop the image edges.
+Choosing an image applies it immediately. Undo restores the previous image until the app exits.
+One static image is shared across virtual desktops. Spotlight is not supported.</value>
+  </data>
+  <data name="PickerTitle" xml:space="preserve">
+    <value>Choose primary wallpaper</value>
+  </data>
+  <data name="PickerFilter" xml:space="preserve">
+    <value>Images (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp</value>
+  </data>
+  <data name="MenuSettings" xml:space="preserve">
+    <value>Settings…</value>
+  </data>
+  <data name="MenuPause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="MenuResume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="MenuChooseResume" xml:space="preserve">
+    <value>Choose image and resume…</value>
+  </data>
+  <data name="MenuLog" xml:space="preserve">
+    <value>Open activity log</value>
+  </data>
+  <data name="MenuExit" xml:space="preserve">
+    <value>Exit (keep current wallpaper)</value>
+  </data>
+  <data name="StatusChecking" xml:space="preserve">
+    <value>Checking displays…</value>
+  </data>
+  <data name="StatusWaiting" xml:space="preserve">
+    <value>Waiting for Windows displays…</value>
+  </data>
+  <data name="StatusStable" xml:space="preserve">
+    <value>Waiting for stable displays · {0}</value>
+  </data>
+  <data name="StatusReading" xml:space="preserve">
+    <value>Read-only test · displays: {0}</value>
+  </data>
+  <data name="StatusRunning" xml:space="preserve">
+    <value>Running · displays: {0}</value>
+  </data>
+  <data name="StatusPaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="StatusPausedNew" xml:space="preserve">
+    <value>Paused · new wallpaper or mode</value>
+  </data>
+  <data name="StatusPausedError" xml:space="preserve">
+    <value>Paused · check activity log</value>
+  </data>
+  <data name="StatusSaved" xml:space="preserve">
+    <value>Image saved · checking displays</value>
+  </data>
+  <data name="ConfigStatus" xml:space="preserve">
+    <value>{0} · displays: {1}</value>
+  </data>
+  <data name="ConfigStatusWaiting" xml:space="preserve">
+    <value>{0} · waiting for displays</value>
+  </data>
+  <data name="PausedTitle" xml:space="preserve">
+    <value>Wallpaper agent paused</value>
+  </data>
+  <data name="PausedNewMessage" xml:space="preserve">
+    <value>A different image or mode was found. Open Settings to choose the image and apply it.</value>
+  </data>
+  <data name="PausedErrorMessage" xml:space="preserve">
+    <value>Open the activity log from the tray menu, then resume when ready.</value>
+  </data>
+  <data name="StartupErrorTitle" xml:space="preserve">
+    <value>Unable to start</value>
+  </data>
+  <data name="ConfigErrorTitle" xml:space="preserve">
+    <value>Unable to open Settings</value>
+  </data>
+  <data name="LogErrorTitle" xml:space="preserve">
+    <value>Unable to open log</value>
+  </data>
+  <data name="GenericError" xml:space="preserve">
+    <value>The action could not be completed. Check the activity log for details.</value>
+  </data>
+  <data name="ImageReadFailed" xml:space="preserve">
+    <value>Unable to read the image. Check the file and try again.</value>
+  </data>
+  <data name="ImageTooLarge" xml:space="preserve">
+    <value>Choose an image no larger than 32 MB.</value>
+  </data>
+  <data name="ImageTooManyPixels" xml:space="preserve">
+    <value>Choose an image with no more than 40 million pixels.</value>
+  </data>
+  <data name="ImageFormatUnsupported" xml:space="preserve">
+    <value>Only static JPG, PNG and BMP images are supported.</value>
+  </data>
+  <data name="InvalidSettings" xml:space="preserve">
+    <value>The settings file is invalid or unsupported. Check the activity log.</value>
+  </data>
+  <data name="AssetLocationInvalid" xml:space="preserve">
+    <value>The saved image must be inside this app's assets folder.</value>
+  </data>
+  <data name="AssetHashChanged" xml:space="preserve">
+    <value>The saved image has changed. Choose it again in Settings.</value>
+  </data>
+  <data name="SettingsChanged" xml:space="preserve">
+    <value>Settings were changed outside this app. Close and reopen the app before making another change.</value>
+  </data>
+  <data name="StartupChanged" xml:space="preserve">
+    <value>Startup settings changed outside this window. Reopen Settings to refresh them.</value>
+  </data>
+  <data name="PictureFillRequired" xml:space="preserve">
+    <value>Set Windows background to Picture and Fill first. Spotlight and slideshow are not supported.</value>
+  </data>
+  <data name="SettingsReadbackFailed" xml:space="preserve">
+    <value>The saved settings could not be verified.</value>
+  </data>
+  <data name="StartupReadbackFailed" xml:space="preserve">
+    <value>The startup registration could not be verified.</value>
+  </data>
+  <data name="SaveRestored" xml:space="preserve">
+    <value>The change could not be applied. Changes made during this attempt were restored.</value>
+  </data>
+  <data name="RestoreIncomplete" xml:space="preserve">
+    <value>The change failed and some changes could not be restored. The agent is paused; check the log.</value>
+  </data>
+  <data name="StartupValueType" xml:space="preserve">
+    <value>The startup entry has an unexpected format. Check the log.</value>
+  </data>
+  <data name="StartupCommandTooLong" xml:space="preserve">
+    <value>The startup command is too long for Windows.</value>
+  </data>
+  <data name="WindowRevealFailed" xml:space="preserve">
+    <value>Windows did not show Settings. Close and reopen the app.</value>
+  </data>
+  <data name="PrimaryImageMissing" xml:space="preserve">
+    <value>The primary display has no image file to select.</value>
+  </data>
+  <data name="WindowTestStatus" xml:space="preserve">
+    <value>Window visibility test</value>
+  </data>
+  <data name="PollLabel" xml:space="preserve">
+    <value>Check displays</value>
+  </data>
+  <data name="PollOption" xml:space="preserve">
+    <value>Every {0:0.#} s</value>
+  </data>
+  <data name="PollHint" xml:space="preserve">
+    <value>1 second is recommended. Shorter intervals check more often; longer intervals respond more slowly. Display changes must match in two consecutive checks.</value>
+  </data>
+  <data name="InvalidPollInterval" xml:space="preserve">
+    <value>Choose a supported check interval: 0.5, 1, 2 or 5 seconds.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="UndoImage" xml:space="preserve">
+    <value>Undo image</value>
+  </data>
+  <data name="SettingsSaved" xml:space="preserve">
+    <value>Settings saved.</value>
+  </data>
+  <data name="ImageApplied" xml:space="preserve">
+    <value>Image applied.</value>
+  </data>
+  <data name="ImageUndone" xml:space="preserve">
+    <value>Previous image restored.</value>
+  </data>
+  <data name="SettingsBusy" xml:space="preserve">
+    <value>Another change is still being applied. Please wait.</value>
+  </data>
+  <data name="NoPreviousImage" xml:space="preserve">
+    <value>No previous image is available to restore.</value>
+  </data>
+  <data name="DisplayReadFailed" xml:space="preserve">
+    <value>Windows displays could not be identified. Wait for the display connection to settle, then try again. Remote sessions may not expose the physical displays.</value>
+  </data>
+  <data name="ImageHelpTitle">
+    <value>Wallpaper</value>
+  </data>
+  <data name="ImageHelpText">
+    <value>The selected image appears only on the current Windows primary display. Other extended displays stay black.
+
+Choose a JPG, PNG or BMP file (up to 32 MB and 40 million pixels). Choosing a file applies it immediately. Fill may crop the image edges.
+
+Use primary image adopts what is currently on the primary display. Undo image restores one previous image until the app exits, without undoing other settings.
+
+The image is shared across Virtual Desktops. Spotlight and slideshow are not supported.</value>
+  </data>
+  <data name="StartupHint">
+    <value>Starts this app after you sign in to Windows, for this user account.
+
+Changing this switch takes effect immediately. Keep the program in its chosen location. If you move it, turn this setting off and on again from the new location.</value>
+  </data>
+  <data name="HelpFor">
+    <value>Help: {0}</value>
+  </data>
+  <data name="ChangeErrorTitle">
+    <value>Unable to apply change</value>
+  </data>
+  <data name="StatusChooseImage">
+    <value>Choose a picture to start</value>
+  </data>
+  <data name="ChooseImageFirst">
+    <value>Choose a picture or use the current primary image to start.</value>
+  </data>
 </root>

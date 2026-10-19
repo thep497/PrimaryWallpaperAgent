@@ -13,7 +13,8 @@ internal sealed class StartupRegistration : IStartupRegistration
 {
     private const string KeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "PrimaryWallpaperAgent";
-    public string ExpectedCommand => "\"" + Path.Combine(AppContext.BaseDirectory, "PrimaryWallpaperAgent.Tray.exe") + "\" --startup";
+    public string ExpectedCommand => CommandFor(Environment.ProcessPath ?? throw new IOException("Executable path is unavailable."));
+    internal static string CommandFor(string executable) => "\"" + Path.GetFullPath(executable) + "\" --startup";
     public string? Read()
     {
         using var key = Registry.CurrentUser.OpenSubKey(KeyPath, writable: false);

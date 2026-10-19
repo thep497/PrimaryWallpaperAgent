@@ -8,7 +8,7 @@ Approved development chunks are complete: source layout, Thai/English UI, config
 
 ### 1. Capture before changing agent state
 
-At the physical Windows console, note the tray status first. Close Config so its preview does not suspend automatic checking. Capture using the existing read-only helper:
+At the physical Windows console, note the tray status first. The latest local build continues checking while Settings is open; explicitly test that behavior as well. Capture using the existing read-only helper:
 
 ```powershell
 Set-Location -LiteralPath 'D:\Programming\PrivateProjects\PrimaryWallpaperAgent'
@@ -29,6 +29,7 @@ Wait for the tray to report Running after each topology change. Current saved po
 |---|---|---|
 | Original three displays | Local3-A | Image only on the Windows primary |
 | Switch Windows primary | Local3-NewPrimary | Image follows the new primary; other displays black |
+| Switch primary with Settings open | Local3-SettingsOpen | Checking continues and the image follows primary |
 | Virtual Desktop 1 / 2 / 3 | Local-VD1 / Local-VD2 / Local-VD3 | Primary-only policy remains visible on each desktop |
 | Disconnect to notebook only | Local-Notebook | Notebook shows the selected image |
 | Reconnect three displays | Local3-Reconnect | Current primary has image; other displays black |
@@ -44,6 +45,7 @@ Compare API assignments with what is actually visible. A path in the API alone i
 
 ### 3. UI and packaging follow-up
 
+- Verify image selection applies immediately and Undo restores only the image, retaining language/poll/startup. Undo is available until app exit.
 - Recheck Thai/English and saved polling at the physical console. The user already confirmed both features work in the Remote session.
 - Verify Tray Pause shows amber pause bars; an error/action-required state shows an exclamation mark.
 - Check Config/Explorer/tray icons on the actual taskbar theme and display scaling. User approved the icon design; high-DPI transitions have not been verified.

@@ -18,3 +18,6 @@
 - [Pending physical-console tests after Remote](PENDING-TESTS.md)
 - [Configurable polling](POLLING-TEST.md)
 - [App and tray icons](BRANDING-TEST.md)
+- [Immediate settings and simplified tray](INSTANT-SETTINGS-TEST.md)
+- [Compact Settings and click hints](COMPACT-SETTINGS-TEST.md)
+- [Single-file release and first-run](RELEASE-TEST.md)

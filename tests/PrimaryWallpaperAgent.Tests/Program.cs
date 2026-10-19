@@ -23,6 +23,9 @@ internal static class Program
                 ["localization"] => LocalizationSelfTests.Run(),
                 ["polling"] => PollingSelfTests.Run(),
                 ["branding"] => BrandingSelfTests.Run(),
+                ["instant"] => InstantSettingsSelfTests.Run(),
+                ["compact"] => CompactSettingsSelfTests.Run(),
+                ["release"] => ReleaseSelfTests.Run(),
                 _ => Usage()
             };
         }
@@ -34,7 +37,7 @@ internal static class Program
     }
     private static int Usage()
     {
-        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|config|window|localization|polling|branding>");
+        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|config|window|localization|polling|branding|instant|compact|release>");
         Console.WriteLine("Fake desktop/startup backends; window tests display only our fixture form.");
         return 2;
     }

@@ -1,75 +1,83 @@
 # Primary Wallpaper Agent
 
-A Windows 11 tray agent that keeps the selected wallpaper on the current primary display and makes all other extended displays black. Includes Thai/English settings and configurable polling.
+A Windows 11 tray app that keeps a picture on the current Windows primary display and makes other extended displays black. It follows primary changes and monitor connections automatically.
 
-Windows agent สำหรับแสดงภาพบน Windows Primary Display และให้จออื่นดำ โดยตาม primary/การเสียบถอดจออัตโนมัติ
+แสดงภาพบน Windows Primary Display เพียงจอเดียว จออื่นที่ Extend เป็นสีดำ รองรับภาษาไทยและอังกฤษ
 
-## โครงสร้าง
+## Download and first launch
 
-- `src/PrimaryWallpaperAgent.Core/` — อ่าน display, Windows COM, policy และ engine ที่ใช้ร่วมกัน
-- `src/PrimaryWallpaperAgent.Tray/` — Config, Tray และการบันทึก settings
-- `src/PrimaryWallpaperAgent.Probe/` — Console แบบอ่านอย่างเดียว และคำสั่งทดลองที่ต้องเรียก explicit
-- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/localization/polling/branding/window เดิม แยกออกจากโปรแกรมใช้งาน
-- `scripts/` — build, test, publish, launch และ diagnostics
-- `assets/branding/` — ไอคอนโปรแกรม/Tray, SVG และ preview พร้อมต้นฉบับสร้างซ้ำได้
-- `docs/development/` — อธิบายโครงสร้างและงานพัฒนา
-- `docs/testing/` — หลักฐานและขั้นทดสอบแต่ละ phase
-- `artifacts/` — bin/obj และ package ใช้งาน ไม่เข้า Git
-- `.local/` — SDK state และสำรองไฟล์ที่ย้าย ไม่เข้า Git
+Download **PrimaryWallpaperAgent.exe** from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). The v0.3.0 preview is a self-contained **Windows x64** single-file build; a separate .NET installation is not required.
 
-ไฟล์ `Directory.Build.props` กำหนด .NET 10, nullable, warnings-as-errors และ centralized artifacts ร่วมกันทั้ง solution ไม่มี NuGet package ภายนอก
+1. Keep the EXE in a permanent local folder. Exit any older running instance before launching it.
+2. Set Windows background to **Picture** and fit to **Fill**. Spotlight/slideshow are not supported.
+3. On first launch, Settings opens and waits for an explicit image choice. Existing wallpaper remains untouched until that choice.
+4. Choose a JPG/PNG/BMP, or select **Use current primary image**. The image applies immediately to the current primary; other extended displays become black.
+5. Optionally select Thai/English, a 0.5/1/2/5 second check interval, or **Start with Windows**. Changes save immediately.
 
-## Build และทดสอบ (PowerShell)
+Settings has no scroll area; click **?** for explanations. **Undo image** restores the previous successful image selection, retaining other preferences. Undo is one level and lasts until app exit. Close/Esc retains successful changes. Display checking continues while Settings is open.
 
-รันจาก root ของ checkout บน Windows โดยใช้ PowerShell 7 และ .NET 10 SDK ตาม global.json (10.0.402) โครงการยังเป็น development prototype; ผลทดสอบเครื่องจริงและข้อจำกัดอยู่ใน docs/testing/ ไม่ถือว่าผ่านทุกอุปกรณ์หรือทุก Remote session
+Start with Windows uses a per-user Run registry entry and the actual EXE path. Copying the EXE to another PC does not enable startup there. If moved/renamed after opting in, toggle this option off/on from its new location. See [deployment details](docs/development/DEPLOYMENT.md).
+
+## Data and updates
+
+New installations create settings, cached images and logs in **%LOCALAPPDATA%\PrimaryWallpaperAgent**. Exit the app before replacing its EXE. Keep the same path to preserve the startup command; user data is separate.
+
+Older installations with settings.json beside the EXE continue using that folder. No silent migration or import of private trial assets occurs. Exit keeps the current wallpaper assignments.
+
+One static image is shared across Windows Virtual Desktops. Unknown wallpaper changes pause the agent for explicit adoption through Settings. Changing the image in Windows alone does not automatically adopt it.
+
+## Build and tests
+
+Windows, PowerShell 7 and .NET SDK **10.0.402** (see global.json):
 
 ```powershell
 .\scripts\Build.ps1
 .\scripts\Test.ps1 -SkipBuild
 ```
 
-ชุดทดสอบใช้ fake desktop/startup ไม่ตั้ง wallpaper หรือ registry จริง การทดสอบ window เปิดเฉพาะหน้าต่าง fixture ของโปรแกรมแล้วปิดเอง
+Tests use generated images and fake display/startup backends. Window tests display only app fixtures. These tests make no real wallpaper or startup registry writes.
 
-## ใช้งาน
-
-หมายเหตุสำหรับ fresh clone: Publish-Tray.ps1 ปัจจุบันใช้ trial plan และสำเนาภาพที่เจ้าของเครื่องอนุมัติไว้ใน ignored folders ซึ่งไม่รวมใน public repo จึงยังไม่ใช่ขั้นติดตั้งสำหรับผู้ใช้ใหม่ Build/tests และ Probe ใช้ได้จาก source; ส่วน first-run setup และแพ็กเกจแจกจ่ายยังเป็นงานถัดไป
+Build and verify a distributable EXE:
 
 ```powershell
-.\scripts\Publish-Tray.ps1
-.\scripts\Start-WallpaperTray.ps1 -Config
+.\scripts\Publish-Release.ps1
+.\scripts\Test-Release.ps1
 ```
 
-ปิด Tray ก่อน publish ซ้ำ Package ใช้งานยังอยู่ `artifacts/PrimaryWallpaperAgent-v0.2.0/` ตำแหน่งเดิม เพื่อคง settings, ภาพและ startup command ที่ผู้ใช้อาจตั้งไว้
+Output: artifacts/releases/v0.3.0/win-x64/PrimaryWallpaperAgent.exe and SHA256SUMS.txt. Publish downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. No third-party app packages, global NuGet source changes or PATH changes are required. The script refuses to overwrite an existing release destination.
 
-คำสั่ง Probe แบบอ่านอย่างเดียว:
+Publish-Tray.ps1 and Start-WallpaperTray.ps1 remain legacy helpers for the private trial package, rather than public installation steps.
+
+Read-only display probe after a Debug build:
 
 ```powershell
 .\artifacts\bin\PrimaryWallpaperAgent.Probe\debug\PrimaryWallpaperAgent.Probe.exe --json
 ```
 
-Exit code 0 = complete, 1 = fatal error, 2 = มีรายการ API ที่ยังอ่าน/จับคู่ไม่ครบ ในเครื่องนี้เคยมี cached/unknown entries แม้ active displays จับคู่สำเร็จ
+Probe exit 0 means complete; 1 means fatal; 2 means some API entries were unreadable/unmatched. Cached entries can yield exit 2 even when active displays are mapped.
 
-## ข้อมูลและความเข้ากันได้
+## Source layout
 
-`snapshots/` และ `.local-assets/` เดิมคงอยู่เพื่อรักษา absolute paths ใน trial/restore plans ไม่ย้ายหรือลบข้อมูลทดลองเก่า ส่วน bin/obj เก่าเก็บสำรองไว้ใต้ `.local/reorganization-*/legacy-build/`
+- src/PrimaryWallpaperAgent.Core — display APIs, policy and engine.
+- src/PrimaryWallpaperAgent.Tray — tray, Settings, first-run and persistence.
+- src/PrimaryWallpaperAgent.Probe — read-only console and explicit diagnostics.
+- tests/PrimaryWallpaperAgent.Tests — nine automated suites.
+- scripts — build, test, publish and diagnostics.
+- assets/branding — icons and reproducible source artwork.
+- docs/development and docs/testing — implementation and evidence.
+- artifacts and .local — ignored packages, output and local evidence.
 
-รอบนี้จัด source/build/test layout โดยไม่ย้าย settings หรือภาพที่ Windows ใช้อยู่ การย้ายข้อมูลผู้ใช้ไปตำแหน่งที่ไม่ผูกกับ package version จะเป็น migration แยกที่ต้องตรวจ hash และ readback ก่อนใช้
+Private settings, photos, monitor snapshots and trial plans are excluded from source and release assets.
 
-สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|localization|polling|branding|window` ไม่บรรจุ test code ในแอปใช้งาน
+## Preview limitations and evidence
 
-## สถานะและขั้นถัดไป
+The user previously verified primary switching, hotplug 3→1→3 and policy persistence across Virtual Desktops. The latest session was Remote. Physical-console mapping/recovery, projector, more than three physical displays, DPI transitions and startup after logon still need validation. Tests with 1/3/5 simulated displays do not establish hardware results.
 
-ผ่านการยืนยันจากผู้ใช้: primary switch, hotplug 3→1→3, การสลับ Virtual Desktops, Config visibility และการรับภาพเก่ากลับมาโดยไม่ถูกทับ
-
-เพิ่ม Config ไทย/อังกฤษแล้ว ผู้ใช้ตรวจผ่านชุดภาษา เพิ่มค่า poll ให้เลือก 0.5/1/2/5 วินาทีแล้ว ผู้ใช้ตรวจผ่าน เพิ่มไอคอนโปรแกรม/Tray แล้ว ผู้ใช้อนุมัติแบบไอคอน ส่วน Spotlight ยังไม่รองรับ และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
-
-- [โครงสร้างและขอบเขตการย้าย](docs/development/PROJECT-LAYOUT.md)
-- [ดัชนีผลทดสอบ](docs/testing/README.md)
-- [Config และ regression fixes](docs/testing/CONFIG-TEST.md)
-- [ภาษาไทย/อังกฤษและผลทดสอบ](docs/testing/LOCALIZATION-TEST.md)
-- [ตั้งค่า poll และผลทดสอบ](docs/testing/POLLING-TEST.md)
-- [ไอคอนและผลทดสอบ](docs/testing/BRANDING-TEST.md)
-- [ภาพตัวอย่างไอคอน](assets/branding/Preview.png)
-- [รายการทดสอบจอจริงหลัง Remote วันที่ 20 ต.ค. 2569](docs/testing/PENDING-TESTS.md)
-
-Workflow: ส่งแต่ละชุดให้ผู้ใช้ตรวจก่อน commit เมื่อผู้ใช้อนุมัติหรือสั่งให้ทำงานต่อจึงค่อย commit และเริ่มชุดถัดไป
+- [v0.3.0 release notes](docs/releases/v0.3.0.md)
+- [Deployment and startup](docs/development/DEPLOYMENT.md)
+- [Testing index](docs/testing/README.md)
+- [Single-file / first-run verification](docs/testing/RELEASE-TEST.md)
+- [Immediate settings / Undo / tray](docs/testing/INSTANT-SETTINGS-TEST.md)
+- [Compact Settings / click-help](docs/testing/COMPACT-SETTINGS-TEST.md)
+- [Pending physical-console checks](docs/testing/PENDING-TESTS.md)
+- [Branding preview](assets/branding/Preview.png)

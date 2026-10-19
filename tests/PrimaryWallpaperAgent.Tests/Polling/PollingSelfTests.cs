@@ -45,8 +45,7 @@ internal static class PollingSelfTests
                 Find<ComboBox>(form, "LanguageSelector").SelectedIndex = 0;
                 Find<ComboBox>(form, "LanguageSelector").SelectedIndex = 1;
                 Assert(selector.SelectedIndex == Array.IndexOf(PollingOptions.SupportedIntervals.ToArray(), interval), "Language preview preserves interval");
-                Assert(Find<Button>(form, "SaveButton").Text == UiText.T(interval == initial.PollIntervalMs ? "SaveApply" : "SaveSettings", "en"), "Poll-only save label");
-                Find<Button>(form, "SaveButton").PerformClick();
+                Assert(form.Controls.Find("SaveButton", true).Length == 0, "Settings has no Save button");
             }
             Assert(request is not null && request.PollIntervalMs == interval, "UI submits selected interval");
             if (interval != initial.PollIntervalMs) Assert(!request!.ApplyWallpaper, "Poll change alone never applies wallpaper");
@@ -72,8 +71,9 @@ internal static class PollingSelfTests
             Find<ComboBox>(form, "PollSelector").SelectedIndex = 0;
             using (var bitmap = new Bitmap(form.Width, form.Height))
             { form.DrawToBitmap(bitmap, new Rectangle(0, 0, form.Width, form.Height)); bitmap.Save(Path.Combine(folder, "config-" + language + ".png"), ImageFormat.Png); }
-            Find<Button>(form, "CancelButton").PerformClick();
-            Assert(calls == 0 && store.Read().SequenceEqual(before), "Cancel leaves saved interval unchanged");
+            Assert(calls == 1, "Polling selection applies immediately");
+            Find<Button>(form, "CloseButton").PerformClick();
+            Assert(calls == 1 && store.Read().SequenceEqual(before), "Close does not add another commit to the mock callback");
         }
 
         ConfigSubmission? adopted = null;
@@ -82,7 +82,6 @@ internal static class PollingSelfTests
             form.Show(); Application.DoEvents();
             Find<ComboBox>(form, "PollSelector").SelectedIndex = 3;
             Find<Button>(form, "UseCurrentButton").PerformClick();
-            Find<Button>(form, "SaveButton").PerformClick();
         }
         Assert(adopted is { ApplyWallpaper: true, PollIntervalMs: 5000 }, "Explicit image adoption still applies when poll changes");
 
@@ -100,9 +99,9 @@ internal static class PollingSelfTests
         {
             Passed = true, SupportedIntervalsMs = PollingOptions.SupportedIntervals.ToArray(), PreferenceSaves = saves,
             NativeWallpaperCalls = desktop.Calls, StartupWrites = startup.Writes,
-            Tests = new[] { "legacy default", "invalid settings", "poll-only save", "reopen", "cancel", "language preview", "image adoption", "rollback" }
+            Tests = new[] { "legacy default", "invalid settings", "poll-only save", "reopen", "immediate apply/close", "language preview", "image adoption", "rollback" }
         }, SettingsStore.JsonOptions));
-        Console.WriteLine("POLLING TESTS PASSED: legacy default, supported intervals, no wallpaper/startup access, reopen/cancel, image adoption and rollback.");
+        Console.WriteLine("POLLING TESTS PASSED: legacy default, supported intervals, no wallpaper/startup access, reopen/immediate apply, image adoption and rollback.");
         return 0;
     }
     private static ConfigForm Form(SelectedImage image, string language, int interval, Action<ConfigSubmission> save, string source) =>
