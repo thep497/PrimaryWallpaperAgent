@@ -41,3 +41,11 @@ Phase 2 พิสูจน์แล้วว่าตั้งภาพแยก
 ถ้าจอใหม่คืน wallpaper ที่ไม่อยู่ในชุดภาพที่รู้จัก หรือ monitor mapping ไม่ครบ guard รุ่นทดลองอาจหยุด ต้องทดสอบ Notebook เดี่ยว/สลับ primary/เสียบถอด/projector ก่อนสรุปว่าใช้งานจริงครบทุก topology ได้
 
 ผล self-tests จำลองแยกจากผลบน Windows จริง: จำลอง desktop reset, primary เปลี่ยน, จำนวนจอเปลี่ยน, matching state ไม่เขียนซ้ำ และ unknown user image ต้องหยุด
+
+## ผล smoke test บน Windows จริง
+
+- วันที่ 19 ตุลาคม 2569 เวลา 15:31:44–15:31:54 (UTC+7), จำกัด 10 วินาที
+- อ่าน 10 samples, repair 1 ครั้ง (setter requests 3 ครั้งสำหรับ active 3 จอ), exit code 0 และหยุดเองตามเวลา
+- Snapshot ล่าสุด: primary LG ใช้ local photograph และอีกสองจอใช้ black BMP
+- ไม่มี setter ซ้ำเมื่อ policy ตรงแล้ว หลักฐานอยู่ใน guard-20261019_083144_131-331794f0 ใต้ trial run เดิม
+- ผลนี้ยังไม่ใช่การทดสอบสลับ Virtual Desktop ระหว่าง guard ทำงาน รอผู้ใช้ทดลองด้วยคำสั่ง 120 วินาทีด้านบน
