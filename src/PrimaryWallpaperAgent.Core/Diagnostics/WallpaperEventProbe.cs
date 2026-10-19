@@ -18,7 +18,7 @@ internal static class WallpaperEventProbe
     {
         if (seconds is < 3 or > 300) throw new ArgumentOutOfRangeException(nameof(seconds), "Use 3-300 seconds.");
         var root = Directory.GetCurrentDirectory();
-        if (!File.Exists(Path.Combine(root, "PrimaryWallpaperAgent.csproj")))
+        if (!File.Exists(Path.Combine(root, "PrimaryWallpaperAgent.slnx")))
             throw new InvalidOperationException("Run event-probe commands from the project directory.");
         // Exclude this application's writers during measurement without calling
         // any setter. Windows itself remains free to switch desktops/settings.

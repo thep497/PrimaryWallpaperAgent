@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UseWindowsForms>true</UseWindowsForms>
+    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/PrimaryWallpaperAgent.Core/PrimaryWallpaperAgent.Core.csproj" />
+    <ProjectReference Include="../../src/PrimaryWallpaperAgent.Tray/PrimaryWallpaperAgent.Tray.csproj" />
+  </ItemGroup>
+</Project>

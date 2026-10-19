@@ -157,7 +157,7 @@ internal static class WallpaperTrial
     internal static int Run(string[] args)
     {
         var root = Path.GetFullPath(Directory.GetCurrentDirectory());
-        if (!File.Exists(Path.Combine(root, "PrimaryWallpaperAgent.csproj")))
+        if (!File.Exists(Path.Combine(root, "PrimaryWallpaperAgent.slnx")))
             throw new InvalidOperationException("Run trial commands from the PrimaryWallpaperAgent project directory.");
         if (args is ["trial-prepare", var source])
         {

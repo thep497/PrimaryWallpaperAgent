@@ -1,5 +1,7 @@
 $ErrorActionPreference = 'Stop'
-$projectPath = $PSScriptRoot
+. (Join-Path $PSScriptRoot 'Common.ps1')
+Set-LocalBuildEnvironment
+$projectPath = $script:ProjectRoot
 $outputPath = Join-Path $projectPath 'artifacts\PrimaryWallpaperAgent-v0.2.0'
 $planPath = [IO.Path]::GetFullPath((Get-Content -LiteralPath (Join-Path $projectPath 'snapshots\phase2-current-plan.txt') -Raw).Trim())
 if (-not $planPath.StartsWith((Join-Path $projectPath 'snapshots\'), [StringComparison]::OrdinalIgnoreCase)) {
@@ -14,7 +16,7 @@ foreach ($item in @(@{ Path = $plan.PhotoPath; Hash = $plan.PhotoSha256 }, @{ Pa
     if ((Get-FileHash -LiteralPath $item.Path -Algorithm SHA256).Hash -ne $item.Hash) { throw 'Approved image checksum mismatch.' }
 }
 # Only local sources, the installed SDK and the approved local image copies are used.
-& dotnet publish (Join-Path $projectPath 'Tray\PrimaryWallpaperAgent.Tray.csproj') -c Release --no-self-contained -o $outputPath
+& dotnet publish (Join-Path $projectPath 'src\PrimaryWallpaperAgent.Tray\PrimaryWallpaperAgent.Tray.csproj') -c Release --no-self-contained -o $outputPath
 if ($LASTEXITCODE -ne 0) { throw "Publish failed: $LASTEXITCODE" }
 $assetPath = Join-Path $outputPath 'assets'
 New-Item -ItemType Directory -Path $assetPath -Force | Out-Null

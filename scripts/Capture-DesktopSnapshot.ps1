@@ -6,7 +6,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$probePath = Join-Path $PSScriptRoot 'bin\Debug\net10.0-windows\PrimaryWallpaperAgent.exe'
+. (Join-Path $PSScriptRoot 'Common.ps1')
+$probePath = Get-ProbePath
 if (-not (Test-Path -LiteralPath $probePath -PathType Leaf)) {
     throw 'Build the Phase 1 probe before capturing a snapshot.'
 }
@@ -30,7 +31,7 @@ $capture = [pscustomobject][ordered]@{
     ProbeExitCode = $probeExitCode
     Probe = $probeSnapshot
 }
-$snapshotDirectory = Join-Path $PSScriptRoot 'snapshots'
+$snapshotDirectory = Join-Path $script:ProjectRoot 'snapshots'
 New-Item -ItemType Directory -Path $snapshotDirectory -Force | Out-Null
 $timestamp = [DateTime]::UtcNow.ToString('yyyyMMdd_HHmmss_fff', [Globalization.CultureInfo]::InvariantCulture)
 $capturePath = Join-Path $snapshotDirectory ('virtual-desktop-{0}-{1}.json' -f $Label, $timestamp)

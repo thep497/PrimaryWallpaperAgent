@@ -1,83 +1,65 @@
 # PrimaryWallpaperAgent
 
-เป้าหมายสุดท้าย: แสดงภาพ wallpaper บน Windows Primary Display เพียงจอเดียว และให้จออื่นเป็นสีดำ โดยปรับเมื่อเสียบ/ถอดจอหรือสลับ primary ไม่ผูกกับยี่ห้อหรือหมายเลขจอ
+Windows agent สำหรับแสดงภาพบน Windows Primary Display และให้จออื่นดำ โดยตาม primary/การเสียบถอดจออัตโนมัติ
 
-## สถานะปัจจุบัน: Probe + Console Guard + System Tray / Config v0.2.0
+## โครงสร้าง
 
-คำสั่ง Probe เดิมยังอ่านอย่างเดียว [Phase 2 one-shot trial](PHASE2-TRIAL.md) ตั้งภาพแยกจอสำเร็จแต่ภาพถูกตั้งกลับเมื่อสลับ Virtual Desktop จึงเพิ่ม [Console Guard แบบจำกัดเวลาทดลอง](CONSOLE-GUARD-TEST.md) ให้รันเองได้ก่อนเพิ่ม tray/autostart
+- `src/PrimaryWallpaperAgent.Core/` — อ่าน display, Windows COM, policy และ engine ที่ใช้ร่วมกัน
+- `src/PrimaryWallpaperAgent.Tray/` — Config, Tray และการบันทึก settings
+- `src/PrimaryWallpaperAgent.Probe/` — Console แบบอ่านอย่างเดียว และคำสั่งทดลองที่ต้องเรียก explicit
+- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/window เดิม แยกออกจากโปรแกรมใช้งาน
+- `scripts/` — build, test, publish, launch และ diagnostics
+- `assets/branding/` — ที่เก็บงานไอคอนในชุดถัดไป
+- `docs/development/` — อธิบายโครงสร้างและงานพัฒนา
+- `docs/testing/` — หลักฐานและขั้นทดสอบแต่ละ phase
+- `artifacts/` — bin/obj และ package ใช้งาน ไม่เข้า Git
+- `.local/` — SDK state และสำรองไฟล์ที่ย้าย ไม่เข้า Git
 
-เก็บ [event timing แบบอ่านอย่างเดียว](EVENT-PROBE-TEST.md) แล้ว ผู้ใช้ยืนยันการเปลี่ยน primary ระหว่าง Notebook/LG ทั้งสองทิศทาง และ [ถอด/เสียบจอจริง 3 -> 1 -> 3](HOTPLUG-TEST.md) ผ่านแล้ว มี [System Tray แบบเปิดเอง](TRAY-TEST.md) ให้ทดสอบเมนูแล้ว ยังไม่ตั้ง autostart
+ไฟล์ `Directory.Build.props` กำหนด .NET 10, nullable, warnings-as-errors และ centralized artifacts ร่วมกันทั้ง solution ไม่มี NuGet package ภายนอก
 
-เปิด Tray ด้วย `Start-WallpaperTray.ps1` และคลิกขวาที่ไอคอนข้างนาฬิกาเพื่อเปิด **ตั้งค่า…** / พัก / ทำงานต่อ / ออก โหมด Console Probe เดิมยังอ่านอย่างเดียว
-
-[Config v0.2.0](CONFIG-TEST.md) เลือกภาพ JPG/PNG/BMP ดูตัวอย่าง และกดบันทึกและใช้ เพื่อเปลี่ยน primary โดยให้จออื่นดำ หากพบภาพใหม่ผ่าน Windows จะให้รับภาพใน Config แทนการพักวน มีตัวเลือกเปิดพร้อม Windows ซึ่งเริ่มปิดและลงทะเบียนเฉพาะเมื่อผู้ใช้เลือกบันทึก ยังไม่เพิ่ม Spotlight
-
-- C# / .NET 10 (`net10.0-windows`), SDK 10.0.402, ไม่มี NuGet package ภายนอก
-- อ่านจอที่ใช้งานใน Windows session ปัจจุบันผ่าน `EnumDisplayMonitors` และ `GetMonitorInfoW`
-- ระบุ primary จาก `MONITORINFOF_PRIMARY`; ไม่ถือว่า DISPLAY1 เป็น primary เสมอ
-- อ่าน monitor interface path ด้วย `EnumDisplayDevicesW` + `EDD_GET_DEVICE_INTERFACE_NAME`
-- จับคู่กับ `IDesktopWallpaper.GetMonitorDevicePathAt` ด้วย device path แบบไม่แยกตัวพิมพ์ใหญ่/เล็ก
-- อ่าน wallpaper path, monitor bounds, background color, position และ slideshow status
-- แยกรายการจอ detached/cached เมื่อ `GetMonitorRECT` คืน `S_FALSE`
-- ถ้าได้ error อื่นจะคง UNKNOWN พร้อม HRESULT; หาก ID ว่างจะไม่เรียก per-monitor getter และให้ HRESULT เป็น null
-- ตรวจ topology ซ้ำท้าย snapshot; ถ้ามีการเปลี่ยนระหว่างอ่านจะให้ตรวจใหม่
-- Probe รันหนึ่งครั้งแล้วจบ ไม่มี watcher, tray, autostart หรือการเขียน registry โดยตรง
-- โหมด Probe ไม่อ่านเนื้อหาไฟล์ภาพหรือเปลี่ยน wallpaper; คำสั่ง Phase 2 อ่านภาพเฉพาะ source ที่ระบุและบันทึก state ตามเอกสาร Phase 2
-
-Native COM interface มี declaration ของ setter เพื่อรักษาลำดับ vtable ตาม Windows SDK โค้ด Probe เรียกเฉพาะ getter; โค้ด trial ที่ต้องเรียก explicit ใช้ SetWallpaper โดยระบุ monitor ID เสมอ
-
-## Build และรันจาก VS Code Terminal (PowerShell)
+## Build และทดสอบ (PowerShell)
 
 ```powershell
 Set-Location -LiteralPath 'D:\Programming\PrivateProjects\PrimaryWallpaperAgent'
-dotnet build --configuration Debug
-.\bin\Debug\net10.0-windows\PrimaryWallpaperAgent.exe
+.\scripts\Build.ps1
+.\scripts\Test.ps1 -SkipBuild
 ```
 
-ควรเรียก `.exe` โดยตรงเพื่อใช้ DPI manifest ของโปรแกรม (PerMonitorV2) และรันใน session ของผู้ใช้ที่ล็อกอินอยู่ ไม่ต้อง Run as administrator
+ชุดทดสอบใช้ fake desktop/startup ไม่ตั้ง wallpaper หรือ registry จริง การทดสอบ window เปิดเฉพาะหน้าต่าง fixture ของโปรแกรมแล้วปิดเอง
 
-คำสั่ง JSON ใช้ข้อมูลชุดเดียวกับ console โดยเขียนไฟล์เฉพาะเมื่อสั่ง redirect:
+## ใช้งาน
 
 ```powershell
-New-Item -ItemType Directory -Path '.\snapshots' -Force | Out-Null
-.\bin\Debug\net10.0-windows\PrimaryWallpaperAgent.exe --json > '.\snapshots\baseline.json'
-$LASTEXITCODE
+.\scripts\Publish-Tray.ps1
+.\scripts\Start-WallpaperTray.ps1 -Config
 ```
 
-Exit code: `0` อ่านและจับคู่ครบ, `1` error ที่ทำต่อไม่ได้, `2` มีรายการกำกวม/อ่านไม่ครบ/argument ไม่ถูกต้อง
+ปิด Tray ก่อน publish ซ้ำ Package ใช้งานยังอยู่ `artifacts/PrimaryWallpaperAgent-v0.2.0/` ตำแหน่งเดิม เพื่อคง settings, ภาพและ startup command ที่ผู้ใช้อาจตั้งไว้
 
-## วิธีอ่านผล
+คำสั่ง Probe แบบอ่านอย่างเดียว:
 
-- `PRIMARY` คือ primary ตาม Windows ณ เวลาที่อ่าน
-- `ExactDevicePath` คือจับคู่ด้วย ID โดยตรง; bounds ใช้ตรวจความสอดคล้องเพิ่มเติมเท่านั้น
-- รายการ `DETACHED/CACHED` อาจเป็นจอที่เคยต่อ ไม่ใช่จำนวนจอที่ใช้งานปัจจุบัน
-- wallpaper path ว่างหมายถึงไม่มีภาพ/solid color หรืออ่านผิดพลาด (ดู HRESULT) ไม่ใช่หลักฐานว่าจอเป็นสีดำ
-- `BackgroundRgb` เป็นค่า global ของ API ไม่ใช่ผลวัดพิกเซลแต่ละจอ
-- ภาพสีดำก็อาจเป็นไฟล์ภาพที่มี path ตามปกติได้
-- ทดสอบ extended desktop 1–3+ จอตามจำนวนที่มีจริง; mirror/duplicate layout ที่กำกวมต้องตรวจแยก
-- หากเปลี่ยน primary/เสียบถอดระหว่าง capture ให้รอ Windows จัดจอเสร็จแล้วรันใหม่
+```powershell
+.\artifacts\bin\PrimaryWallpaperAgent.Probe\debug\PrimaryWallpaperAgent.Probe.exe --json
+```
 
-## Gate ก่อนเพิ่ม watcher/tray/autostart
+Exit code 0 = complete, 1 = fatal error, 2 = มีรายการ API ที่ยังอ่าน/จับคู่ไม่ครบ ในเครื่องนี้เคยมี cached/unknown entries แม้ active displays จับคู่สำเร็จ
 
-ยังไม่สรุปว่า API สะท้อน wallpaper ของแต่ละ Virtual Desktop ได้ถูกต้อง ต้องทดลองบน Windows เครื่องนี้ก่อน:
+## ข้อมูลและความเข้ากันได้
 
-1. ตรวจ baseline ใน desktop ปัจจุบัน ให้ผู้ใช้ยืนยันจำนวนจอ/primary/ภาพที่เห็นเทียบผล Probe
-2. สลับไป Virtual Desktop ที่มีอยู่แล้วและรัน Probe โดยยังไม่เปลี่ยนภาพ ถ้าไม่มี desktop อื่น ให้ตกลงการสร้างชั่วคราวกับผู้ใช้ก่อน
-3. เปรียบเทียบผลและภาพที่เห็นจริง หาก desktop เหล่านั้นใช้ภาพเดียวกันอยู่ การทดลองนี้ยังไม่พิสูจน์กรณี wallpaper ต่างกัน
-4. การตั้งภาพต่างกันเพื่อทดลองต้องให้ผู้ใช้อธิบาย/อนุมัติแยก เพราะ Phase 1 ห้ามโปรแกรมแก้ wallpaper
-5. ทดสอบแต่ละ extended topology: notebook เดี่ยว, ต่อจอเพิ่ม, สลับ primary แล้วถอด/เสียบใหม่ โดยผู้ใช้ทำเมื่อพร้อมและรัน Probe ซ้ำ
-6. บันทึกข้อจำกัดจริง ก่อนออกแบบวิธีรักษาภาพต้นฉบับและ apply policy แล้วค่อยเพิ่ม watcher/tray/autostart
+`snapshots/` และ `.local-assets/` เดิมคงอยู่เพื่อรักษา absolute paths ใน trial/restore plans ไม่ย้ายหรือลบข้อมูลทดลองเก่า ส่วน bin/obj เก่าเก็บสำรองไว้ใต้ `.local/reorganization-*/legacy-build/`
 
-ไม่มีการอ้างว่า `IDesktopWallpaper` มี public API สำหรับ enumerate หรือเลือก Virtual Desktop เฉพาะตัว
+รอบนี้จัด source/build/test layout โดยไม่ย้าย settings หรือภาพที่ Windows ใช้อยู่ การย้ายข้อมูลผู้ใช้ไปตำแหน่งที่ไม่ผูกกับ package version จะเป็น migration แยกที่ต้องตรวจ hash และ readback ก่อนใช้
 
-ผลตรวจจากเครื่องจริงอยู่ใน [PHASE1-VALIDATION.md](PHASE1-VALIDATION.md) ผู้ใช้ยืนยันผลบนจอแล้ว ขณะนี้อยู่ระหว่าง [ทดสอบ Virtual Desktops](VIRTUAL-DESKTOP-TEST.md) ด้วยสคริปต์ `Capture-DesktopSnapshot.ps1`
+สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|window` ไม่บรรจุ test code ในแอปใช้งาน
 
-## แหล่งอ้างอิง Microsoft
+## สถานะและขั้นถัดไป
 
-- [IDesktopWallpaper](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-idesktopwallpaper)
-- [GetMonitorDevicePathAt: รวม detached monitor ได้](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-getmonitordevicepathat)
-- [GetMonitorRECT และ S_FALSE](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-getmonitorrect)
-- [GetWallpaper และ empty path](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-getwallpaper)
-- [EnumDisplayDevicesW และ EDD_GET_DEVICE_INTERFACE_NAME](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdisplaydevicesw)
-- [GetMonitorInfoW](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-getmonitorinfow)
-- [Windows SDK COM declaration](https://github.com/microsoft/win32metadata/blob/main/generation/WinSDK/RecompiledIdlHeaders/um/ShObjIdl_core.h)
+ผ่านการยืนยันจากผู้ใช้: primary switch, hotplug 3→1→3, การสลับ Virtual Desktops, Config visibility และการรับภาพเก่ากลับมาโดยไม่ถูกทับ
+
+ยังไม่ได้เพิ่มภาษา/ค่า poll ที่ปรับได้/ไอคอนจริง/Spotlight และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
+
+- [โครงสร้างและขอบเขตการย้าย](docs/development/PROJECT-LAYOUT.md)
+- [ดัชนีผลทดสอบ](docs/testing/README.md)
+- [Config และ regression fixes](docs/testing/CONFIG-TEST.md)
+
+Workflow: ส่งแต่ละชุดให้ผู้ใช้ตรวจก่อน commit เมื่อผู้ใช้อนุมัติหรือสั่งให้ทำงานต่อจึงค่อย commit และเริ่มชุดถัดไป

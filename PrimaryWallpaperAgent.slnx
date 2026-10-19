@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PrimaryWallpaperAgent.Core/PrimaryWallpaperAgent.Core.csproj" />
+    <Project Path="src/PrimaryWallpaperAgent.Probe/PrimaryWallpaperAgent.Probe.csproj" />
+    <Project Path="src/PrimaryWallpaperAgent.Tray/PrimaryWallpaperAgent.Tray.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PrimaryWallpaperAgent.Tests/PrimaryWallpaperAgent.Tests.csproj" />
+  </Folder>
+</Solution>
