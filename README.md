@@ -1,4 +1,4 @@
-# PrimaryWallpaperAgent
+# Primary Wallpaper Agent
 
 Windows agent สำหรับแสดงภาพบน Windows Primary Display และให้จออื่นดำ โดยตาม primary/การเสียบถอดจออัตโนมัติ
 
@@ -7,7 +7,7 @@ Windows agent สำหรับแสดงภาพบน Windows Primary Disp
 - `src/PrimaryWallpaperAgent.Core/` — อ่าน display, Windows COM, policy และ engine ที่ใช้ร่วมกัน
 - `src/PrimaryWallpaperAgent.Tray/` — Config, Tray และการบันทึก settings
 - `src/PrimaryWallpaperAgent.Probe/` — Console แบบอ่านอย่างเดียว และคำสั่งทดลองที่ต้องเรียก explicit
-- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/window เดิม แยกออกจากโปรแกรมใช้งาน
+- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/localization/window เดิม แยกออกจากโปรแกรมใช้งาน
 - `scripts/` — build, test, publish, launch และ diagnostics
 - `assets/branding/` — ที่เก็บงานไอคอนในชุดถัดไป
 - `docs/development/` — อธิบายโครงสร้างและงานพัฒนา
@@ -50,16 +50,17 @@ Exit code 0 = complete, 1 = fatal error, 2 = มีรายการ API ที
 
 รอบนี้จัด source/build/test layout โดยไม่ย้าย settings หรือภาพที่ Windows ใช้อยู่ การย้ายข้อมูลผู้ใช้ไปตำแหน่งที่ไม่ผูกกับ package version จะเป็น migration แยกที่ต้องตรวจ hash และ readback ก่อนใช้
 
-สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|window` ไม่บรรจุ test code ในแอปใช้งาน
+สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|localization|window` ไม่บรรจุ test code ในแอปใช้งาน
 
 ## สถานะและขั้นถัดไป
 
 ผ่านการยืนยันจากผู้ใช้: primary switch, hotplug 3→1→3, การสลับ Virtual Desktops, Config visibility และการรับภาพเก่ากลับมาโดยไม่ถูกทับ
 
-ยังไม่ได้เพิ่มภาษา/ค่า poll ที่ปรับได้/ไอคอนจริง/Spotlight และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
+เพิ่ม Config ไทย/อังกฤษแล้ว ผู้ใช้ตรวจผ่านชุดภาษา ส่วนค่า poll ที่ปรับได้/ไอคอนจริง/Spotlight ยังไม่ได้เพิ่ม และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
 
 - [โครงสร้างและขอบเขตการย้าย](docs/development/PROJECT-LAYOUT.md)
 - [ดัชนีผลทดสอบ](docs/testing/README.md)
 - [Config และ regression fixes](docs/testing/CONFIG-TEST.md)
+- [ภาษาไทย/อังกฤษและผลทดสอบ](docs/testing/LOCALIZATION-TEST.md)
 
 Workflow: ส่งแต่ละชุดให้ผู้ใช้ตรวจก่อน commit เมื่อผู้ใช้อนุมัติหรือสั่งให้ทำงานต่อจึงค่อย commit และเริ่มชุดถัดไป

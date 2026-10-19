@@ -18,12 +18,12 @@ internal sealed class StartupRegistration : IStartupRegistration
     {
         using var key = Registry.CurrentUser.OpenSubKey(KeyPath, writable: false);
         var value = key?.GetValue(ValueName, null, RegistryValueOptions.DoNotExpandEnvironmentNames);
-        if (value is not null and not string) throw new InvalidOperationException("Unexpected startup registration type.");
+        if (value is not null and not string) throw new UiMessageException("StartupValueType");
         return (string?)value;
     }
     public void Write(string? command)
     {
-        if (command is { Length: > 260 }) throw new InvalidOperationException("Startup command exceeds the Windows Run key limit.");
+        if (command is { Length: > 260 }) throw new UiMessageException("StartupCommandTooLong");
         using var key = Registry.CurrentUser.CreateSubKey(KeyPath, writable: true);
         if (command is null) key.DeleteValue(ValueName, throwOnMissingValue: false);
         else key.SetValue(ValueName, command, RegistryValueKind.String);

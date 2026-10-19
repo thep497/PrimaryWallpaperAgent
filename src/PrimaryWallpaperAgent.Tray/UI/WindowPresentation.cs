@@ -20,6 +20,6 @@ internal static class WindowPresentation
         ShowWindow(form.Handle, IsIconic(form.Handle) ? 9 /* SW_RESTORE */ : 5 /* SW_SHOW */);
         form.BringToFront();
         form.Activate();
-        if (!IsVisible(form)) throw new InvalidOperationException("Windows ยังไม่แสดงหน้าตั้งค่า กรุณาปิดและเปิดโปรแกรมใหม่ค่ะ");
+        if (!IsVisible(form)) throw new UiMessageException("WindowRevealFailed");
     }
 }

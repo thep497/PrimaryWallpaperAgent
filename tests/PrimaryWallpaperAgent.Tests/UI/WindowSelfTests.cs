@@ -26,8 +26,8 @@ internal static class WindowSelfTests
                 // Same tray-only ApplicationContext + modal Config as production.
                 for (var attempt = 1; attempt <= 2; attempt++)
                 {
-                    using var form = new ConfigForm(selected, false, "ทดสอบการแสดงหน้าต่าง", () => fixture,
-                        (_, _) => throw new InvalidOperationException("Test must not save"), () => { });
+                    using var form = new ConfigForm(selected, false, language => UiText.T("WindowTestStatus", language), () => fixture,
+                        _ => throw new InvalidOperationException("Test must not save"), _ => { });
                     var currentAttempt = attempt;
                     form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                     {

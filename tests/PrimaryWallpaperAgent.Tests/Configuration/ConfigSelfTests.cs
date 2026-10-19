@@ -101,7 +101,7 @@ internal static class ConfigSelfTests
         _ = Catch(() => SelectedImage.Read(invalid));
 
         var saves = 0;
-        using (var form = new ConfigForm(firstImage, false, "พักอยู่ · พบภาพใหม่ · 3 จอ\nระหว่างตั้งค่าจะพักการปรับภาพอัตโนมัติ", () => next, (_, _) => saves++, () => { }))
+        using (var form = new ConfigForm(firstImage, false, language => UiText.T("ConfigStatus", language, UiText.T("StatusPausedNew", language), 3), () => next, _ => saves++, _ => { }))
         {
             // Render only our own form, without screen capture or interacting with other apps.
             form.CreateControl();

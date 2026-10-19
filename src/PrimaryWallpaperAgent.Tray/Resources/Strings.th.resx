@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="ConfigTitle" xml:space="preserve"><value>ตั้งค่า</value></data>
+  <data name="ConfigHeading" xml:space="preserve"><value>ตั้งค่าภาพพื้นหลัง</value></data>
+  <data name="ConfigPolicy" xml:space="preserve"><value>ภาพตาม Windows Primary อัตโนมัติ · จออื่นทุกจอสีดำ</value></data>
+  <data name="LanguageLabel" xml:space="preserve"><value>ภาษา</value></data>
+  <data name="LanguageHint" xml:space="preserve"><value>เลือกภาษาเพื่อดูตัวอย่าง กดบันทึกเพื่อใช้กับ Tray และการแจ้งเตือน</value></data>
+  <data name="StartupCheck" xml:space="preserve"><value>เปิดพร้อม Windows สำหรับบัญชีนี้</value></data>
+  <data name="SaveApply" xml:space="preserve"><value>บันทึกและใช้ภาพ</value></data>
+  <data name="SaveSettings" xml:space="preserve"><value>บันทึกการตั้งค่า</value></data>
+  <data name="Cancel" xml:space="preserve"><value>ยกเลิก</value></data>
+  <data name="ViewLog" xml:space="preserve"><value>ดูบันทึก</value></data>
+  <data name="Browse" xml:space="preserve"><value>เลือกไฟล์ภาพ…</value></data>
+  <data name="UseCurrent" xml:space="preserve"><value>ใช้ภาพบนจอหลักตอนนี้</value></data>
+  <data name="ImageNotes" xml:space="preserve"><value>รองรับ JPG / PNG / BMP · บนจอใช้ Fill ซึ่งอาจตัดขอบภาพ
+เลือกดูตัวอย่างก่อนได้ ภาพจริงจะเปลี่ยนเมื่อกดบันทึกและใช้ภาพ
+ใช้ภาพนิ่งร่วมกันทุก Virtual Desktop ยังไม่รองรับ Spotlight</value></data>
+  <data name="PickerTitle" xml:space="preserve"><value>เลือกภาพหลัก</value></data>
+  <data name="PickerFilter" xml:space="preserve"><value>ไฟล์ภาพ (*.jpg;*.jpeg;*.png;*.bmp)|*.jpg;*.jpeg;*.png;*.bmp</value></data>
+  <data name="MenuSettings" xml:space="preserve"><value>ตั้งค่า…</value></data>
+  <data name="MenuPause" xml:space="preserve"><value>พักการทำงาน</value></data>
+  <data name="MenuResume" xml:space="preserve"><value>ทำงานต่อ</value></data>
+  <data name="MenuChooseResume" xml:space="preserve"><value>เลือกภาพและทำงานต่อ…</value></data>
+  <data name="MenuCheck" xml:space="preserve"><value>ตรวจภาพอีกครั้ง</value></data>
+  <data name="MenuLog" xml:space="preserve"><value>เปิดบันทึกการทำงาน</value></data>
+  <data name="MenuExit" xml:space="preserve"><value>ออก (คงภาพปัจจุบัน)</value></data>
+  <data name="StatusChecking" xml:space="preserve"><value>กำลังตรวจจอ…</value></data>
+  <data name="StatusWaiting" xml:space="preserve"><value>รอ Windows จัดจอ…</value></data>
+  <data name="StatusStable" xml:space="preserve"><value>รอจอนิ่ง · {0} จอ</value></data>
+  <data name="StatusReading" xml:space="preserve"><value>ทดสอบอ่าน · {0} จอ</value></data>
+  <data name="StatusRunning" xml:space="preserve"><value>ทำงานอยู่ · {0} จอ</value></data>
+  <data name="StatusPaused" xml:space="preserve"><value>พักอยู่</value></data>
+  <data name="StatusPausedNew" xml:space="preserve"><value>พักอยู่ · พบภาพหรือโหมดใหม่</value></data>
+  <data name="StatusPausedError" xml:space="preserve"><value>พักอยู่ · ตรวจบันทึก</value></data>
+  <data name="StatusSaved" xml:space="preserve"><value>บันทึกภาพแล้ว · กำลังตรวจจอ</value></data>
+  <data name="ConfigStatus" xml:space="preserve"><value>{0} · {1} จอ
+ระหว่างตั้งค่าจะพักการปรับภาพอัตโนมัติ</value></data>
+  <data name="ConfigStatusWaiting" xml:space="preserve"><value>{0} · รอ Windows จัดจอ
+ระหว่างตั้งค่าจะพักการปรับภาพอัตโนมัติ</value></data>
+  <data name="PausedTitle" xml:space="preserve"><value>โปรแกรมพักการทำงาน</value></data>
+  <data name="PausedNewMessage" xml:space="preserve"><value>พบภาพหรือโหมดใหม่ เปิดตั้งค่าเพื่อเลือกภาพและบันทึกใช้</value></data>
+  <data name="PausedErrorMessage" xml:space="preserve"><value>ตรวจบันทึกจากเมนูไอคอน แล้วเลือกทำงานต่อเมื่อพร้อม</value></data>
+  <data name="StartupErrorTitle" xml:space="preserve"><value>เปิดโปรแกรมไม่ได้</value></data>
+  <data name="ConfigErrorTitle" xml:space="preserve"><value>เปิดตั้งค่าไม่ได้</value></data>
+  <data name="LogErrorTitle" xml:space="preserve"><value>เปิดบันทึกไม่ได้</value></data>
+  <data name="GenericError" xml:space="preserve"><value>ทำรายการไม่สำเร็จ กรุณาตรวจรายละเอียดในบันทึกการทำงาน</value></data>
+  <data name="ImageReadFailed" xml:space="preserve"><value>อ่านภาพไม่ได้ กรุณาตรวจไฟล์แล้วลองใหม่</value></data>
+  <data name="ImageTooLarge" xml:space="preserve"><value>เลือกไฟล์ภาพขนาดไม่เกิน 32 MB</value></data>
+  <data name="ImageTooManyPixels" xml:space="preserve"><value>เลือกภาพขนาดไม่เกิน 40 ล้านพิกเซล</value></data>
+  <data name="ImageFormatUnsupported" xml:space="preserve"><value>รุ่นนี้รองรับภาพนิ่ง JPG, PNG และ BMP</value></data>
+  <data name="InvalidSettings" xml:space="preserve"><value>ไฟล์ตั้งค่าไม่ถูกต้องหรือเป็นรุ่นที่ไม่รองรับ กรุณาตรวจบันทึก</value></data>
+  <data name="AssetLocationInvalid" xml:space="preserve"><value>ภาพที่บันทึกต้องอยู่ในโฟลเดอร์ assets ของโปรแกรม</value></data>
+  <data name="AssetHashChanged" xml:space="preserve"><value>สำเนาภาพถูกเปลี่ยน กรุณาเลือกภาพอีกครั้งในหน้าตั้งค่า</value></data>
+  <data name="SettingsChanged" xml:space="preserve"><value>ไฟล์ตั้งค่าถูกเปลี่ยนจากภายนอก กรุณาปิดและเปิดโปรแกรมใหม่ก่อนบันทึก</value></data>
+  <data name="StartupChanged" xml:space="preserve"><value>ค่าเปิดพร้อม Windows ถูกเปลี่ยนระหว่างตั้งค่า กรุณาปิดและเปิดหน้าตั้งค่าใหม่</value></data>
+  <data name="PictureFillRequired" xml:space="preserve"><value>ตั้งพื้นหลัง Windows เป็น Picture และ Fill ก่อน รุ่นนี้ยังไม่รองรับ Spotlight หรือ Slideshow</value></data>
+  <data name="SettingsReadbackFailed" xml:space="preserve"><value>ตรวจสอบค่าที่บันทึกไม่สำเร็จ</value></data>
+  <data name="StartupReadbackFailed" xml:space="preserve"><value>ตรวจสอบค่าเปิดพร้อม Windows ไม่สำเร็จ</value></data>
+  <data name="SaveRestored" xml:space="preserve"><value>บันทึกไม่สำเร็จ ค่าที่เปลี่ยนในครั้งนี้ถูกคืนแล้ว</value></data>
+  <data name="RestoreIncomplete" xml:space="preserve"><value>บันทึกไม่สำเร็จและคืนค่าบางส่วนไม่ได้ โปรแกรมจะพัก กรุณาตรวจบันทึก</value></data>
+  <data name="StartupValueType" xml:space="preserve"><value>รายการเปิดพร้อม Windows มีรูปแบบไม่ถูกต้อง กรุณาตรวจบันทึก</value></data>
+  <data name="StartupCommandTooLong" xml:space="preserve"><value>คำสั่งเปิดพร้อม Windows ยาวเกินขีดจำกัด</value></data>
+  <data name="WindowRevealFailed" xml:space="preserve"><value>Windows ยังไม่แสดงหน้าตั้งค่า กรุณาปิดและเปิดโปรแกรมใหม่</value></data>
+  <data name="PrimaryImageMissing" xml:space="preserve"><value>จอหลักไม่มีไฟล์ภาพให้เลือก</value></data>
+  <data name="WindowTestStatus" xml:space="preserve"><value>ทดสอบการแสดงหน้าต่าง</value></data>
+</root>

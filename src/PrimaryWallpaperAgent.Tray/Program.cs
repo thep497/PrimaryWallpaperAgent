@@ -8,6 +8,7 @@ internal static class Program
         var smoke = args is ["--smoke-test"];
         var showConfig = args is ["--config"];
         if (args.Length > 0 && !smoke && !showConfig && args is not ["--startup"]) return 2;
+        var language = "th";
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
         ApplicationConfiguration.Initialize();
         try
@@ -15,6 +16,7 @@ internal static class Program
             var store = new SettingsStore(AppContext.BaseDirectory);
             var bytes = store.Read();
             var config = SettingsStore.Parse(bytes);
+            language = config.Language;
             _ = store.Images(config);
             using var lease = new WallpaperWriteLease();
             using var context = new AgentContext(store, config, bytes, smoke, showConfig);
@@ -30,7 +32,8 @@ internal static class Program
                 File.WriteAllText(Path.Combine(folder, "last-test-error.txt"), error.ToString());
                 return 1;
             }
-            MessageBox.Show(error.Message, "PrimaryWallpaperAgent — เปิดไม่ได้", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            try { Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "runtime")); File.AppendAllText(Path.Combine(AppContext.BaseDirectory, "runtime", "startup-error.log"), error + Environment.NewLine); } catch (IOException) { }
+            MessageBox.Show(UiText.Error(error, language), UiText.Title("StartupErrorTitle", language), MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
     }

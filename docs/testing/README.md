@@ -12,5 +12,7 @@
 - [Tray](TRAY-TEST.md)
 - [Config / visibility / A-B-A fixes](CONFIG-TEST.md)
 - [ผลตรวจหลังจัดโฟลเดอร์](REORGANIZATION-RESULT.md)
+- [Thai / English UI](LOCALIZATION-TEST.md)
 
 ไฟล์ snapshot, monitor IDs, personal image paths และภาพตัวอย่างจริงอยู่ใน ignored folders ของเครื่อง ไม่เข้า Git
+- [Pending physical-console tests after Remote](PENDING-TESTS.md)
