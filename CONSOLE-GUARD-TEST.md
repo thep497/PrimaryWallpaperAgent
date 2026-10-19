@@ -2,7 +2,7 @@
 
 ## เหตุผล
 
-Phase 2 พิสูจน์แล้วว่าตั้งภาพแยก monitor ได้ใน desktop ที่เลือก แต่หลังผู้ใช้สลับ desktop 1 -> desktop 2 -> desktop 1 ค่ากลับเป็นภาพเดิมทั้ง 3 จอ ตรงกันทั้ง API และการยืนยันภาพจริง primary/topology ไม่เปลี่ยน วิธี apply ครั้งเดียวจึงไม่พอกับการใช้งานหลาย Virtual Desktop บนเครื่องนี้
+Phase 2 พบหนึ่งรอบที่หลังผู้ใช้สลับ desktop 1 -> desktop 2 -> desktop 1 ค่ากลับเป็นภาพเดิมทั้ง 3 จอ ตรงกันทั้ง API และภาพจริง primary/topology ไม่เปลี่ยน จึงยังพึ่ง one-shot ให้คงค่าทุกสถานการณ์ไม่ได้ รอบทดสอบถัดมาพบว่าภาพคงถูกต้องโดยไม่มี setter ด้วย ดูผลแต่ละรอบด้านล่างแยกกัน
 
 ขั้นนี้เพิ่ม guard สำหรับทดลองแบบจำกัดเวลาเท่านั้น ไม่ติดตั้ง tray/autostart ไม่สร้าง scheduled task หรือ service
 
@@ -58,3 +58,14 @@ Phase 2 พิสูจน์แล้วว่าตั้งภาพแยก
 - ยังไม่ได้วัด latency ของการเปลี่ยนภาพหรือทดสอบ desktop 3; ขั้นถัดไปเก็บ event timing แบบ read-only
 
 ผลถัดมาใน Event Probe: ผู้ใช้ทดสอบครบ 3 desktop โดยไม่มี Guard/setting writes ของโปรแกรมนี้ ภาพยังคงถูกต้องตลอดและ 108 reads มี state เดียว จึงแยกจากผล Guard ข้างต้น ไม่ถือว่าทุกรอบ switch จำเป็นต้อง repair ดู EVENT-PROBE-TEST.md
+
+## ผลเปลี่ยน primary บน Windows จริง
+
+- รอบ guard-20261019_085711_997-6ee83a74 วันที่ 19 ตุลาคม 2569; ผู้ใช้ยืนยันผ่านทั้งเปลี่ยนจาก LG ไป Notebook และกลับ LG
+- repair-1 เวลา 15:57:28 (UTC+7): Notebook เป็น primary และใช้ primary.jpg; LG กับจอแนวตั้งใช้ black.bmp
+- repair-2 เวลา 15:57:41: LG กลับเป็น primary และใช้ primary.jpg; Notebook กับจอแนวตั้งใช้ black.bmp
+- ทั้งสอง snapshot มี active 3 จอ, topology stable และ native readback ตรงแผน
+- 32 samples, 2 repairs, elapsed 35.567 วินาที, exit code 0 และผู้ใช้หยุดด้วย Ctrl+C
+- หลังจบไม่พบ process ของ Agent ค้าง ไม่ได้เพิ่ม tray/autostart
+- หลักฐาน derived อยู่ใน primary-switch-result.json ของ run เดียวกัน; คง repair snapshots และ journal ต้นฉบับ
+- ยังไม่ได้ทดสอบจำนวน active displays เปลี่ยนบนเครื่องจริง ขั้นถัดไปอยู่ใน HOTPLUG-TEST.md

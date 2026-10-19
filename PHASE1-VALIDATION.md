@@ -24,7 +24,7 @@
 
 ## ยังไม่ได้ทดสอบ
 
-- Notebook เดี่ยว, ถอด/เสียบจอ, สลับ primary, projector และ topology 3+ จออื่น
+- Notebook เดี่ยว, ถอด/เสียบจอ, projector และ topology 3+ จออื่น; การสลับ primary ระหว่าง Notebook/LG ทดสอบกับ Guard จริงและผู้ใช้ยืนยันผ่านแล้ว ดู CONSOLE-GUARD-TEST.md
 - Virtual Desktops: ทดสอบการอ่าน A/B เมื่อสอง desktop ใช้ภาพเดียวกันแล้ว; ยังไม่ได้ทดสอบภาพต่างกันหรือการ apply ภาพแยกจอ ดู VIRTUAL-DESKTOP-TEST.md
 - Apply wallpaper policy, watcher, tray, autostart
 
