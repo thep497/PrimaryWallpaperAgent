@@ -14,22 +14,40 @@ internal interface ITrialDesktop
     void SetWallpaper(string monitorId, string path);
 }
 
-internal sealed class NativeTrialDesktop : ITrialDesktop, IDisposable
+internal sealed class NativeTrialDesktop : ITrialDesktop
 {
-    private readonly object instance = Activator.CreateInstance(Type.GetTypeFromCLSID(
-        new Guid("C2CF3110-460E-4FC1-B9D0-8A1C0C9CC4BD"), true)!)!;
-
     public ProbeResult Capture() => Probe.Capture();
 
     public void SetWallpaper(string monitorId, string path)
     {
         if (string.IsNullOrWhiteSpace(monitorId) || string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("A specific monitor ID and image path are required; global writes are forbidden.");
-        var hr = ((IDesktopWallpaper)instance).SetWallpaper(monitorId, path);
-        if (hr != 0) throw new COMException($"SetWallpaper returned {Probe.Hex(hr)}.", hr);
+        WithApi(api =>
+        {
+            var hr = api.SetWallpaper(monitorId, path);
+            if (hr != 0) throw new COMException($"SetWallpaper returned {Probe.Hex(hr)}.", hr);
+            return 0;
+        });
     }
 
-    public void Dispose() => Marshal.FinalReleaseComObject(instance);
+    internal void VerifyReadConnection() => WithApi(api =>
+    {
+        // Real COM regression check: a nested probe must not invalidate this RCW.
+        // This is intentionally a getter-only operation, before any wallpaper write.
+        var snapshot = Probe.Capture();
+        var hr = api.GetPosition(out var position);
+        if (hr != 0 || position != snapshot.Position)
+            throw new InvalidOperationException("COM read connection did not survive a nested probe.");
+        return 0;
+    });
+
+    private static T WithApi<T>(Func<IDesktopWallpaper, T> operation)
+    {
+        var instance = Activator.CreateInstance(Type.GetTypeFromCLSID(
+            new Guid("C2CF3110-460E-4FC1-B9D0-8A1C0C9CC4BD"), true)!)!;
+        try { return operation((IDesktopWallpaper)instance); }
+        finally { Marshal.ReleaseComObject(instance); }
+    }
 }
 
 internal static class TrialEngine
@@ -153,12 +171,13 @@ internal static class WallpaperTrial
         RequireInside(planPath, Path.Combine(root, "snapshots"));
         var plan = JsonSerializer.Deserialize<TrialPlan>(File.ReadAllText(planPath)) ?? throw new InvalidDataException("Invalid trial plan.");
         ValidatePlan(root, plan);
-        using var desktop = new NativeTrialDesktop();
+        var desktop = new NativeTrialDesktop();
         if (args[0] == "trial-restore-check")
         {
             TrialEngine.RequireSameTopology(plan, desktop.Capture());
+            desktop.VerifyReadConnection();
             if (!File.Exists(plan.SourceOriginalPath)) throw new FileNotFoundException("Original image is unavailable.");
-            Console.WriteLine("RESTORE CHECK PASSED: assets and monitor mapping are valid; no setters executed.");
+            Console.WriteLine("RESTORE CHECK PASSED: assets, monitor mapping and nested COM lifetime regression check are valid; no setters executed.");
             return 0;
         }
         if (args[0] == "trial-status")

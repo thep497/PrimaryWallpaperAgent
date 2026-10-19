@@ -93,7 +93,9 @@ internal static class Probe
         }
         finally
         {
-            if (comObject is not null && Marshal.IsComObject(comObject)) Marshal.FinalReleaseComObject(comObject);
+            // Balance this activation only. FinalRelease would invalidate shared
+            // RCWs held by another caller in the same apartment.
+            if (comObject is not null && Marshal.IsComObject(comObject)) Marshal.ReleaseComObject(comObject);
         }
 
         foreach (var display in displays)
