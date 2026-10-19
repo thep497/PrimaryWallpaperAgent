@@ -7,9 +7,9 @@ Windows agent สำหรับแสดงภาพบน Windows Primary Disp
 - `src/PrimaryWallpaperAgent.Core/` — อ่าน display, Windows COM, policy และ engine ที่ใช้ร่วมกัน
 - `src/PrimaryWallpaperAgent.Tray/` — Config, Tray และการบันทึก settings
 - `src/PrimaryWallpaperAgent.Probe/` — Console แบบอ่านอย่างเดียว และคำสั่งทดลองที่ต้องเรียก explicit
-- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/localization/polling/window เดิม แยกออกจากโปรแกรมใช้งาน
+- `tests/PrimaryWallpaperAgent.Tests/` — ชุดทดสอบ policy/config/localization/polling/branding/window เดิม แยกออกจากโปรแกรมใช้งาน
 - `scripts/` — build, test, publish, launch และ diagnostics
-- `assets/branding/` — ที่เก็บงานไอคอนในชุดถัดไป
+- `assets/branding/` — ไอคอนโปรแกรม/Tray, SVG และ preview พร้อมต้นฉบับสร้างซ้ำได้
 - `docs/development/` — อธิบายโครงสร้างและงานพัฒนา
 - `docs/testing/` — หลักฐานและขั้นทดสอบแต่ละ phase
 - `artifacts/` — bin/obj และ package ใช้งาน ไม่เข้า Git
@@ -50,19 +50,21 @@ Exit code 0 = complete, 1 = fatal error, 2 = มีรายการ API ที
 
 รอบนี้จัด source/build/test layout โดยไม่ย้าย settings หรือภาพที่ Windows ใช้อยู่ การย้ายข้อมูลผู้ใช้ไปตำแหน่งที่ไม่ผูกกับ package version จะเป็น migration แยกที่ต้องตรวจ hash และ readback ก่อนใช้
 
-สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|localization|polling|window` ไม่บรรจุ test code ในแอปใช้งาน
+สคริปต์ที่ root ย้ายเข้า `scripts/` แล้ว ส่วนคำสั่ง self-test เดิมย้ายไปตัวรัน `PrimaryWallpaperAgent.Tests.exe policy|config|localization|polling|branding|window` ไม่บรรจุ test code ในแอปใช้งาน
 
 ## สถานะและขั้นถัดไป
 
 ผ่านการยืนยันจากผู้ใช้: primary switch, hotplug 3→1→3, การสลับ Virtual Desktops, Config visibility และการรับภาพเก่ากลับมาโดยไม่ถูกทับ
 
-เพิ่ม Config ไทย/อังกฤษแล้ว ผู้ใช้ตรวจผ่านชุดภาษา เพิ่มค่า poll ให้เลือก 0.5/1/2/5 วินาทีแล้ว ผู้ใช้ตรวจผ่าน ส่วนไอคอนจริง/Spotlight ยังไม่ได้เพิ่ม และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
+เพิ่ม Config ไทย/อังกฤษแล้ว ผู้ใช้ตรวจผ่านชุดภาษา เพิ่มค่า poll ให้เลือก 0.5/1/2/5 วินาทีแล้ว ผู้ใช้ตรวจผ่าน เพิ่มไอคอนโปรแกรม/Tray แล้ว ผู้ใช้อนุมัติแบบไอคอน ส่วน Spotlight ยังไม่รองรับ และยังต้องทดสอบ projector, มากกว่า 3 จอจริง และ startup หลัง logon ตามขั้นที่ตกลง
 
 - [โครงสร้างและขอบเขตการย้าย](docs/development/PROJECT-LAYOUT.md)
 - [ดัชนีผลทดสอบ](docs/testing/README.md)
 - [Config และ regression fixes](docs/testing/CONFIG-TEST.md)
 - [ภาษาไทย/อังกฤษและผลทดสอบ](docs/testing/LOCALIZATION-TEST.md)
 - [ตั้งค่า poll และผลทดสอบ](docs/testing/POLLING-TEST.md)
+- [ไอคอนและผลทดสอบ](docs/testing/BRANDING-TEST.md)
+- [ภาพตัวอย่างไอคอน](assets/branding/Preview.png)
 - [รายการทดสอบจอจริงหลัง Remote วันที่ 20 ต.ค. 2569](docs/testing/PENDING-TESTS.md)
 
 Workflow: ส่งแต่ละชุดให้ผู้ใช้ตรวจก่อน commit เมื่อผู้ใช้อนุมัติหรือสั่งให้ทำงานต่อจึงค่อย commit และเริ่มชุดถัดไป

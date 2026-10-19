@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Primary Wallpaper Agent">
+<defs><linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1769EC"/><stop offset="1" stop-color="#39D2E3"/></linearGradient><clipPath id="screen"><rect x="57" y="48" width="142" height="119" rx="9"/></clipPath></defs>
+<g id="secondary-left"><rect x="12" y="81" width="68" height="98" rx="12" fill="#EDF7FF"/><rect x="15" y="84" width="62" height="92" rx="9" fill="#172C46"/><rect x="20" y="91" width="52" height="68" rx="5" fill="#070D16"/><rect x="40" y="177" width="12" height="14" rx="3" fill="#EDF7FF"/><rect x="43" y="177" width="6" height="12" rx="2" fill="#172C46"/><rect x="25" y="188" width="42" height="9" rx="4" fill="#EDF7FF"/><rect x="28" y="191" width="36" height="3" rx="1" fill="#172C46"/></g>
+<use href="#secondary-left" transform="translate(164 0)"/>
+<rect x="45" y="36" width="166" height="152" rx="18" fill="#EDF7FF"/><rect x="49" y="40" width="158" height="144" rx="14" fill="#172C46"/>
+<g clip-path="url(#screen)"><path fill="url(#sky)" d="M57 48h142v119H57z"/><circle cx="166" cy="76" r="11" fill="#F7F5CE"/><path fill="#174C7C" d="M57 139 98 94 124 119 151 87 199 141V167H57z"/><path fill="#18BDA6" d="M57 151 99 124 134 150 174 111 199 135V167H57z"/></g>
+<rect x="112" y="174" width="32" height="3" rx="1.5" fill="#39D2E3"/><rect x="108" y="187" width="40" height="29" rx="5" fill="#EDF7FF"/><rect x="112" y="187" width="32" height="25" rx="3" fill="#172C46"/><rect x="76" y="210" width="104" height="14" rx="7" fill="#EDF7FF"/><rect x="80" y="214" width="96" height="6" rx="3" fill="#172C46"/>
+</svg>

@@ -14,7 +14,8 @@ internal static class WindowSelfTests
         { using var drawing = Graphics.FromImage(bitmap); drawing.Clear(Color.Teal); bitmap.Save(fixture, ImageFormat.Png); }
         var selected = SelectedImage.Read(fixture);
         using var context = new ApplicationContext();
-        using var icon = new NotifyIcon { Icon = SystemIcons.Application, Text = "PrimaryWallpaperAgent · window test", Visible = true };
+        using var trayIcons = new TrayIconSet();
+        using var icon = new NotifyIcon { Icon = trayIcons.Running, Text = "Primary Wallpaper Agent · window test", Visible = true };
         using var timer = new System.Windows.Forms.Timer { Interval = 100 };
         var results = new List<object>();
         Exception? failure = null;
@@ -29,6 +30,7 @@ internal static class WindowSelfTests
                     using var form = new ConfigForm(selected, false, language => UiText.T("WindowTestStatus", language), () => fixture,
                         _ => throw new InvalidOperationException("Test must not save"), _ => { });
                     var currentAttempt = attempt;
+                    icon.Icon = attempt == 1 ? trayIcons.Paused : trayIcons.Attention;
                     form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                     {
                         try

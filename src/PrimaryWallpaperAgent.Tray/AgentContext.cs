@@ -13,6 +13,7 @@ internal sealed class AgentContext : ApplicationContext
     private readonly bool smoke;
     private readonly NativeTrialDesktop desktop = new();
     private readonly NotifyIcon icon;
+    private readonly TrayIconSet trayIcons = new();
     private readonly ContextMenuStrip menu = new();
     private readonly ToolStripMenuItem status = new() { Enabled = false };
     private readonly ToolStripMenuItem toggle = new();
@@ -64,7 +65,7 @@ internal sealed class AgentContext : ApplicationContext
         menu.Items.Add(new ToolStripSeparator());
         exitItem.Click += (_, _) => ExitThread();
         menu.Items.Add(exitItem);
-        icon = new NotifyIcon { Icon = SystemIcons.Application, ContextMenuStrip = menu, Visible = true };
+        icon = new NotifyIcon { Icon = trayIcons.Running, ContextMenuStrip = menu, Visible = true };
         icon.DoubleClick += (_, _) => ShowConfig();
         icon.BalloonTipClicked += (_, _) => ShowConfig();
         RenderChrome();
@@ -241,6 +242,7 @@ internal sealed class AgentContext : ApplicationContext
         toggle.Text = T(paused ? needsConfig ? "MenuChooseResume" : "MenuResume" : "MenuPause");
         status.Text = UiText.T(statusKey, config.Language, statusArgs);
         icon.Text = UiText.AppName + " — " + status.Text;
+        icon.Icon = paused ? needsConfig || statusKey == "StatusPausedError" ? trayIcons.Attention : trayIcons.Paused : trayIcons.Running;
     }
     private void Log(string message) => File.AppendAllText(logPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
     private void Save(string name, object value) => File.WriteAllText(Path.Combine(logFolder, name),
@@ -269,7 +271,7 @@ internal sealed class AgentContext : ApplicationContext
     }
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { timer.Dispose(); icon.Dispose(); menu.Dispose(); }
+        if (disposing) { timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
         base.Dispose(disposing);
     }
 }

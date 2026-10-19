@@ -5,8 +5,13 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <Version>0.2.0</Version>
+    <AssemblyTitle>Primary Wallpaper Agent</AssemblyTitle>
+    <Product>Primary Wallpaper Agent</Product>
+    <Description>Show wallpaper on the primary display and keep other displays black.</Description>
+    <ApplicationIcon>../../assets/branding/Application.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../PrimaryWallpaperAgent.Core/PrimaryWallpaperAgent.Core.csproj" />
+    <EmbeddedResource Include="../../assets/branding/*.ico" LogicalName="PrimaryWallpaperAgent.Tray.Branding.%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

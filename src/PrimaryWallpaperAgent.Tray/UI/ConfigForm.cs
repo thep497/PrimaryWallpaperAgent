@@ -2,6 +2,7 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed class ConfigForm : Form
 {
+    private readonly Icon applicationIcon = AppBranding.CreateApplicationIcon();
     private readonly PictureBox preview = new() { Dock = DockStyle.Fill, BackColor = Color.FromArgb(25, 29, 36), SizeMode = PictureBoxSizeMode.Zoom, MinimumSize = new Size(300, 180) };
     private readonly Label filename = new() { AutoSize = false, Height = 30, Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft };
     private readonly Label feedback = new() { Name = "FeedbackLabel", AutoSize = true, MaximumSize = new Size(690, 0), ForeColor = Color.Firebrick, Padding = new Padding(0, 6, 0, 6) };
@@ -47,6 +48,7 @@ internal sealed class ConfigForm : Form
         this.language = initialLanguage = UiText.Normalize(language);
         initialStartup = startupEnabled;
         initialPollIntervalMs = PollingOptions.Validate(pollIntervalMs);
+        Icon = applicationIcon;
         Font = new Font("Segoe UI", 10);
         heading.Font = new Font(Font.FontFamily, 19, FontStyle.Bold);
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -178,6 +180,7 @@ internal sealed class ConfigForm : Form
     {
         if (disposing) { preview.Image?.Dispose(); preview.Image = null; }
         base.Dispose(disposing);
+        if (disposing) applicationIcon.Dispose();
     }
     private sealed record PollOption(int IntervalMs, string Label)
     {
