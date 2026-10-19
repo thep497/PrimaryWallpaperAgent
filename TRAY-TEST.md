@@ -42,3 +42,5 @@
 อ้างอิง Microsoft: [NotifyIcon](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.notifyicon?view=windowsdesktop-10.0), [ApplicationContext](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.applicationcontext?view=windowsdesktop-10.0)
 
 WinForms ตั้ง PerMonitorV2 ผ่าน `ApplicationHighDpiMode` และ `ApplicationConfiguration.Initialize()` ตาม [WFO0003](https://learn.microsoft.com/en-us/dotnet/desktop/winforms/compiler-messages/wfo0003); manifest ของ Console Probe เดิมคงแยกไว้
+
+เปิดโหมดจริงเวลา 16:16:37 (+07:00): ปรับหนึ่งรอบเพื่อใช้สำเนาภาพใน package, active 3 จอ, primary 1 จอ และ readback ตรง policy ไม่มี autostart รอผู้ใช้ยืนยันไอคอน/เมนูพัก/ทำงานต่อ/ออก หลักฐานอยู่ใน runtime/25691019_091637_243-7e2c95bd/
