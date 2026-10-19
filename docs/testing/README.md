@@ -16,3 +16,4 @@
 
 ไฟล์ snapshot, monitor IDs, personal image paths และภาพตัวอย่างจริงอยู่ใน ignored folders ของเครื่อง ไม่เข้า Git
 - [Pending physical-console tests after Remote](PENDING-TESTS.md)
+- [Configurable polling](POLLING-TEST.md)

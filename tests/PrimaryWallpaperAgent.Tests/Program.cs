@@ -21,6 +21,7 @@ internal static class Program
                 ["config"] => ConfigSelfTests.Run(),
                 ["window"] => WindowSelfTests.Run(),
                 ["localization"] => LocalizationSelfTests.Run(),
+                ["polling"] => PollingSelfTests.Run(),
                 _ => Usage()
             };
         }
@@ -32,7 +33,7 @@ internal static class Program
     }
     private static int Usage()
     {
-        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|config|window|localization>");
+        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|config|window|localization|polling>");
         Console.WriteLine("Fake desktop/startup backends; window tests display only our fixture form.");
         return 2;
     }

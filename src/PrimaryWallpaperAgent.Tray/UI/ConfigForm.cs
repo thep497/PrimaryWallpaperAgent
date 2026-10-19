@@ -12,6 +12,9 @@ internal sealed class ConfigForm : Form
     private readonly Label languageLabel = new() { AutoSize = true, Margin = new Padding(0, 7, 10, 0) };
     private readonly Label languageHint = new() { AutoSize = true, MaximumSize = new Size(690, 0), ForeColor = SystemColors.GrayText };
     private readonly ComboBox languageSelector = new() { Name = "LanguageSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
+    private readonly Label pollLabel = new() { AutoSize = true, Margin = new Padding(0, 12, 10, 0) };
+    private readonly Label pollHint = new() { AutoSize = true, MaximumSize = new Size(650, 0), ForeColor = SystemColors.GrayText, Margin = new Padding(0, 4, 0, 4) };
+    private readonly ComboBox pollSelector = new() { Name = "PollSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170, Margin = new Padding(3, 8, 3, 3) };
     private readonly CheckBox startup = new() { Name = "StartupCheck", AutoSize = true };
     private readonly Button apply = new() { Name = "SaveButton", AutoSize = true, Padding = new Padding(14, 6, 14, 6) };
     private readonly Button browse = new() { AutoSize = true, Padding = new Padding(8, 4, 8, 4) };
@@ -24,15 +27,17 @@ internal sealed class ConfigForm : Form
     private readonly Action<Exception>? reportError;
     private readonly string initialLanguage;
     private readonly bool initialStartup;
+    private readonly int initialPollIntervalMs;
     private SelectedImage selected;
     private string language;
     private bool imageChosen;
+    private bool refreshingPollLabels;
     private Exception? lastError;
     private string errorFallback = "GenericError";
 
     internal ConfigForm(SelectedImage initial, bool startupEnabled, Func<string, string> statusText,
         Func<string> currentPrimary, Action<ConfigSubmission> save, Action<string> openLog,
-        string language = "th", Action<Exception>? reportError = null)
+        string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs)
     {
         selected = initial;
         this.currentPrimary = currentPrimary;
@@ -41,6 +46,7 @@ internal sealed class ConfigForm : Form
         this.reportError = reportError;
         this.language = initialLanguage = UiText.Normalize(language);
         initialStartup = startupEnabled;
+        initialPollIntervalMs = PollingOptions.Validate(pollIntervalMs);
         Font = new Font("Segoe UI", 10);
         heading.Font = new Font(Font.FontFamily, 19, FontStyle.Bold);
         AutoScaleMode = AutoScaleMode.Dpi;
@@ -61,7 +67,7 @@ internal sealed class ConfigForm : Form
         layout.Controls.Add(choose, 0, 4);
         layout.Controls.Add(filename, 0, 5);
         layout.Controls.Add(notes, 0, 6);
-        var languages = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2, Margin = new Padding(0, 0, 0, 10) };
+        var languages = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 4, Margin = new Padding(0, 0, 0, 10) };
         languages.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         languages.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         languageSelector.Items.AddRange([new LanguageOption("th", "ไทย (Thai)"), new LanguageOption("en", "English")]);
@@ -75,6 +81,14 @@ internal sealed class ConfigForm : Form
         languages.Controls.Add(languageSelector, 1, 0);
         languages.Controls.Add(languageHint, 0, 1);
         languages.SetColumnSpan(languageHint, 2);
+        foreach (var interval in PollingOptions.SupportedIntervals)
+            pollSelector.Items.Add(new PollOption(interval, PollOptionText(interval)));
+        pollSelector.SelectedIndex = Array.IndexOf(PollingOptions.SupportedIntervals.ToArray(), initialPollIntervalMs);
+        pollSelector.SelectedIndexChanged += (_, _) => { if (!refreshingPollLabels) ApplyTexts(); };
+        languages.Controls.Add(pollLabel, 0, 2);
+        languages.Controls.Add(pollSelector, 1, 2);
+        languages.Controls.Add(pollHint, 0, 3);
+        languages.SetColumnSpan(pollHint, 2);
         layout.Controls.Add(languages, 0, 7);
         startup.Checked = startupEnabled;
         startup.CheckedChanged += (_, _) => ApplyTexts();
@@ -92,7 +106,9 @@ internal sealed class ConfigForm : Form
         ApplyTexts();
     }
 
-    private bool ApplyWallpaper => imageChosen || (language == initialLanguage && startup.Checked == initialStartup);
+    private int PollIntervalMs => ((PollOption)pollSelector.SelectedItem!).IntervalMs;
+    private bool ApplyWallpaper => imageChosen || (language == initialLanguage && startup.Checked == initialStartup && PollIntervalMs == initialPollIntervalMs);
+    private string PollOptionText(int intervalMs) => UiText.T("PollOption", language, intervalMs / 1000d);
 
     private void ApplyTexts()
     {
@@ -104,6 +120,18 @@ internal sealed class ConfigForm : Form
         notes.Text = T("ImageNotes");
         languageLabel.Text = T("LanguageLabel");
         languageHint.Text = T("LanguageHint");
+        pollLabel.Text = T("PollLabel");
+        pollHint.Text = T("PollHint");
+        // Rebuild display labels on language preview while keeping the selected interval.
+        refreshingPollLabels = true;
+        var selectedPoll = pollSelector.SelectedIndex;
+        for (var index = 0; index < pollSelector.Items.Count; index++)
+        {
+            var option = (PollOption)pollSelector.Items[index]!;
+            pollSelector.Items[index] = option with { Label = PollOptionText(option.IntervalMs) };
+        }
+        pollSelector.SelectedIndex = selectedPoll;
+        refreshingPollLabels = false;
         startup.Text = T("StartupCheck");
         apply.Text = T(ApplyWallpaper ? "SaveApply" : "SaveSettings");
         browse.Text = T("Browse");
@@ -142,7 +170,7 @@ internal sealed class ConfigForm : Form
     {
         apply.Enabled = false;
         UseWaitCursor = true;
-        try { save(new(selected, startup.Checked, language, ApplyWallpaper)); DialogResult = DialogResult.OK; Close(); }
+        try { save(new(selected, startup.Checked, language, ApplyWallpaper, PollIntervalMs)); DialogResult = DialogResult.OK; Close(); }
         catch (Exception error) { ShowError(error, "GenericError"); }
         finally { apply.Enabled = true; UseWaitCursor = false; }
     }
@@ -150,6 +178,10 @@ internal sealed class ConfigForm : Form
     {
         if (disposing) { preview.Image?.Dispose(); preview.Image = null; }
         base.Dispose(disposing);
+    }
+    private sealed record PollOption(int IntervalMs, string Label)
+    {
+        public override string ToString() => Label;
     }
     private sealed record LanguageOption(string Code, string Label)
     {

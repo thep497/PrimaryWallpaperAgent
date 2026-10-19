@@ -67,4 +67,8 @@
   <data name="WindowRevealFailed" xml:space="preserve"><value>Windows ยังไม่แสดงหน้าตั้งค่า กรุณาปิดและเปิดโปรแกรมใหม่</value></data>
   <data name="PrimaryImageMissing" xml:space="preserve"><value>จอหลักไม่มีไฟล์ภาพให้เลือก</value></data>
   <data name="WindowTestStatus" xml:space="preserve"><value>ทดสอบการแสดงหน้าต่าง</value></data>
+  <data name="PollLabel" xml:space="preserve"><value>ตรวจสอบจอทุก</value></data>
+  <data name="PollOption" xml:space="preserve"><value>ทุก {0:0.#} วินาที</value></data>
+  <data name="PollHint" xml:space="preserve"><value>แนะนำ 1 วินาที ค่ายิ่งสั้นยิ่งตรวจถี่ ค่ายาวจะตอบสนองช้าลง โดยข้อมูลจอต้องตรงกัน 2 รอบติดต่อกันก่อนปรับภาพ</value></data>
+  <data name="InvalidPollInterval" xml:space="preserve"><value>กรุณาเลือกช่วงเวลาตรวจสอบ 0.5, 1, 2 หรือ 5 วินาที</value></data>
 </root>

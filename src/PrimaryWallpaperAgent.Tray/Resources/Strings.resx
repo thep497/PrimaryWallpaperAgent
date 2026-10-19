@@ -67,4 +67,8 @@ Automatic wallpaper changes are paused while Settings is open.</value></data>
   <data name="WindowRevealFailed" xml:space="preserve"><value>Windows did not show Settings. Close and reopen the app.</value></data>
   <data name="PrimaryImageMissing" xml:space="preserve"><value>The primary display has no image file to select.</value></data>
   <data name="WindowTestStatus" xml:space="preserve"><value>Window visibility test</value></data>
+  <data name="PollLabel" xml:space="preserve"><value>Check displays</value></data>
+  <data name="PollOption" xml:space="preserve"><value>Every {0:0.#} s</value></data>
+  <data name="PollHint" xml:space="preserve"><value>1 second is recommended. Shorter intervals check more often; longer intervals respond more slowly. Display changes must match in two consecutive checks.</value></data>
+  <data name="InvalidPollInterval" xml:space="preserve"><value>Choose a supported check interval: 0.5, 1, 2 or 5 seconds.</value></data>
 </root>

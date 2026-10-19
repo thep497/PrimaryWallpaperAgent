@@ -20,7 +20,7 @@ internal sealed class AgentContext : ApplicationContext
     private readonly ToolStripMenuItem checkItem = new();
     private readonly ToolStripMenuItem logItem = new();
     private readonly ToolStripMenuItem exitItem = new();
-    private readonly System.Windows.Forms.Timer timer = new() { Interval = 1000 };
+    private readonly System.Windows.Forms.Timer timer = new();
     private readonly Stopwatch uptime = Stopwatch.StartNew();
     private readonly Queue<TimeSpan> repairs = new();
     private readonly string logFolder;
@@ -44,11 +44,13 @@ internal sealed class AgentContext : ApplicationContext
         images = store.Images(config);
         this.smoke = smoke;
         openOnFirstTick = showConfig;
+        timer.Interval = PollingOptions.Validate(config.PollIntervalMs);
         logFolder = Path.Combine(AppContext.BaseDirectory, "runtime", DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(logFolder);
         logPath = Path.Combine(logFolder, "agent.log");
-        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v0.2; poll 1 second; two stable samples; startup writes only on Config Save");
+        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v0.2; two stable samples; startup writes only on Config Save");
         Log("UI_LANGUAGE_LOADED language=" + config.Language);
+        Log("POLL_INTERVAL_LOADED milliseconds=" + timer.Interval);
         menu.Items.Add(status);
         menu.Items.Add(new ToolStripSeparator());
         settingsItem.Click += (_, _) => ShowConfig();
@@ -72,7 +74,7 @@ internal sealed class AgentContext : ApplicationContext
 
     private void Tick()
     {
-        if (smoke && uptime.Elapsed.TotalSeconds >= 5) { ExitThread(); return; }
+        if (smoke && uptime.Elapsed.TotalMilliseconds >= PollingOptions.SmokeDurationMs(config.PollIntervalMs)) { ExitThread(); return; }
         if (configForm is not null) return;
         if (openOnFirstTick) { openOnFirstTick = false; ShowConfig(); return; }
         if (paused) return;
@@ -183,12 +185,13 @@ internal sealed class AgentContext : ApplicationContext
                 {
                     var candidate = request.ApplyWallpaper ? store.Prepare(config, request.Image, request.StartWithWindows) :
                         config with { StartWithWindows = request.StartWithWindows };
-                    candidate = candidate with { Language = UiText.Normalize(request.Language) };
+                    candidate = candidate with { Language = UiText.Normalize(request.Language), PollIntervalMs = PollingOptions.Validate(request.PollIntervalMs) };
                     var candidateImages = request.ApplyWallpaper ? store.Images(candidate) : images;
                     var id = "config-" + Guid.NewGuid().ToString("N")[..8];
                     ConfigWorkflow.Apply(candidate, candidateImages, configBytes, startupAtOpen, store, startup,
                         desktop, Log, (name, value) => Save(id + "-" + name + ".json", value), request.ApplyWallpaper);
                     config = candidate;
+                    timer.Interval = config.PollIntervalMs;
                     images = candidateImages;
                     configBytes = JsonSerializer.SerializeToUtf8Bytes(candidate, SettingsStore.JsonOptions);
                     if (request.ApplyWallpaper)
@@ -198,9 +201,10 @@ internal sealed class AgentContext : ApplicationContext
                     }
                     else RenderChrome(); // Preserve pause state and the selected wallpaper.
                     Log("UI_LANGUAGE_SAVED language=" + config.Language + "; applyWallpaper=" + request.ApplyWallpaper);
+                    Log("POLL_INTERVAL_SAVED milliseconds=" + timer.Interval);
                 }
                 catch (Exception error) { Pause(error, requireConfig: true); throw; }
-            }, OpenLog, config.Language, error => Log("CONFIG_UI_ERROR " + error));
+            }, OpenLog, config.Language, error => Log("CONFIG_UI_ERROR " + error), config.PollIntervalMs);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
@@ -259,7 +263,7 @@ internal sealed class AgentContext : ApplicationContext
         {
             Log($"EXIT samples={samples}; repairs={repairCount}; last wallpaper assignments remain");
             Save("summary.json", new { SmokeTest = smoke, Samples = samples, Repairs = repairCount,
-                SecondsElapsed = uptime.Elapsed.TotalSeconds, Paused = paused, RestoredOnExit = false, Language = config.Language });
+                SecondsElapsed = uptime.Elapsed.TotalSeconds, Paused = paused, RestoredOnExit = false, Language = config.Language, PollIntervalMs = timer.Interval });
         }
         finally { base.ExitThreadCore(); }
     }
