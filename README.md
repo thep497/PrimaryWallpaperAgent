@@ -1,5 +1,7 @@
 # Primary Wallpaper Agent
 
+A Windows 11 tray agent that keeps the selected wallpaper on the current primary display and makes all other extended displays black. Includes Thai/English settings and configurable polling.
+
 Windows agent สำหรับแสดงภาพบน Windows Primary Display และให้จออื่นดำ โดยตาม primary/การเสียบถอดจออัตโนมัติ
 
 ## โครงสร้าง
@@ -19,8 +21,9 @@ Windows agent สำหรับแสดงภาพบน Windows Primary Disp
 
 ## Build และทดสอบ (PowerShell)
 
+รันจาก root ของ checkout บน Windows โดยใช้ PowerShell 7 และ .NET 10 SDK ตาม global.json (10.0.402) โครงการยังเป็น development prototype; ผลทดสอบเครื่องจริงและข้อจำกัดอยู่ใน docs/testing/ ไม่ถือว่าผ่านทุกอุปกรณ์หรือทุก Remote session
+
 ```powershell
-Set-Location -LiteralPath 'D:\Programming\PrivateProjects\PrimaryWallpaperAgent'
 .\scripts\Build.ps1
 .\scripts\Test.ps1 -SkipBuild
 ```
@@ -28,6 +31,8 @@ Set-Location -LiteralPath 'D:\Programming\PrivateProjects\PrimaryWallpaperAgent'
 ชุดทดสอบใช้ fake desktop/startup ไม่ตั้ง wallpaper หรือ registry จริง การทดสอบ window เปิดเฉพาะหน้าต่าง fixture ของโปรแกรมแล้วปิดเอง
 
 ## ใช้งาน
+
+หมายเหตุสำหรับ fresh clone: Publish-Tray.ps1 ปัจจุบันใช้ trial plan และสำเนาภาพที่เจ้าของเครื่องอนุมัติไว้ใน ignored folders ซึ่งไม่รวมใน public repo จึงยังไม่ใช่ขั้นติดตั้งสำหรับผู้ใช้ใหม่ Build/tests และ Probe ใช้ได้จาก source; ส่วน first-run setup และแพ็กเกจแจกจ่ายยังเป็นงานถัดไป
 
 ```powershell
 .\scripts\Publish-Tray.ps1
