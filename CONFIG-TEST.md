@@ -40,3 +40,25 @@
 - ยังรอผู้ใช้ยืนยัน Save/Cancel/picker และภาพจริงของ v0.2.0; ทดสอบจำลองไม่ใช่ผล native apply ของรุ่นนี้
 
 อ้างอิง Microsoft: [File.Replace](https://learn.microsoft.com/en-us/dotnet/api/system.io.file.replace), [Run/RunOnce keys](https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys), [OpenFileDialog](https://learn.microsoft.com/en-us/dotnet/api/system.windows.forms.openfiledialog)
+
+## แก้ Config ซ่อนอยู่ — รอผู้ใช้ตรวจ ยังไม่ commit
+
+ผู้ใช้แจ้งว่าเปิดจาก Tray แล้วไม่เห็น Config ตรวจเฉพาะ windows ของ process นี้พบ title ถูกต้องแต่ native Visible=false และ Cloaked=0 ไม่ใช่หลักฐานว่าหน้าต่างไปอยู่ Virtual Desktop อื่น Log เดิม CONFIG_OPEN บันทึกแค่ก่อน ShowDialog จึงยังยืนยันการมองเห็นไม่ได้
+
+ตัวเรียกใช้ Start-Process -WindowStyle Hidden ส่ง startup show state มายัง WinForms ทำให้ first show ถูกซ่อน แก้ตัวเรียก -Config เป็น Normal และให้ Config เรียก SW_SHOW หลัง first show ผ่าน message queue แล้ว เรียกซ้ำจะ restore/reveal พร้อม Activate และตรวจ IsWindowVisible แทน Activate อย่างเดียว
+
+เพิ่ม --self-test-window ใช้ tray-only ApplicationContext + modal Config เช่น production เปิดด้วย Hidden และ Normal แต่ละแบบทดสอบ first show, restore จาก minimized, reveal ซ้ำ และปิดแล้วเปิดใหม่ ผ่าน native visibility โดยไม่มี wallpaper setter / registry writer
+
+ข้อกำหนดการทำงาน: ส่งรุ่นแก้ให้ผู้ใช้ตรวจ ก่อน commit เมื่อผู้ใช้อนุมัติหรือสั่งให้ทำงานต่อจึงค่อย commit
+
+อ้างอิง: [ShowWindow และ startup show state](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-showwindow)
+
+## แก้เลือกภาพเก่าแล้วถูกย้อนเป็นภาพล่าสุด — รอผู้ใช้ตรวจ ยังไม่ commit
+
+สาเหตุ: AcceptedPaths เดิมสะสม source และสำเนาของทุกภาพที่เคยใช้ เมื่อผู้ใช้เปลี่ยนจาก B กลับ A จึงตีความ A ว่าเป็น Windows reset ที่อนุญาต แล้วซ่อมกลับ B
+
+Schema 3 เก็บ CurrentSourcePath แยกชัด ใช้เฉพาะภาพหลักปัจจุบัน/ต้นทางของภาพนี้และไฟล์ดำเป็นชุดที่อนุญาต ไม่ใช้ประวัติภาพเพื่อเขียนทับภาพที่พบ ข้อมูล schema 1/2 ยังอ่านได้แต่ไม่อนุมาน current source จากประวัติ ไม่แก้ settings เดิมเองตอนเปิดแอป จะบันทึก schema 3 เมื่อผู้ใช้กดบันทึกและใช้
+
+ทดสอบ regression สลับ A -> B -> A -> B -> A, ภาพเก่าคงอยู่และไม่เกิด setter จนผู้ใช้รับภาพนั้น, การตั้งภาพปัจจุบันกลับมาทุกจอยังซ่อมจอรองดำได้ และการบันทึกตัวเลือก startup อย่างเดียวคงต้นทางภาพปัจจุบันไว้
+
+ถ้า Windows ตั้งภาพเก่าที่ต่างจากภาพปัจจุบันหลังสลับ Virtual Desktop จะถามรับภาพเช่นกัน เพราะข้อมูล wallpaper path อย่างเดียวไม่ได้บอกว่าเกิดจากผู้ใช้หรือระบบ

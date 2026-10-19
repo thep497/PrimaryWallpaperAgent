@@ -5,7 +5,8 @@ using System.Text.Json;
 namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed record TrayConfig(int SchemaVersion, string PhotoFile, string PhotoSha256,
-    string BlackFile, string BlackSha256, string[] AcceptedPaths, bool StartWithWindows = false, string? PhotoLabel = null);
+    string BlackFile, string BlackSha256, string[] AcceptedPaths, bool StartWithWindows = false,
+    string? PhotoLabel = null, string? CurrentSourcePath = null);
 
 internal sealed record SelectedImage(string SourcePath, byte[] Bytes, string Extension, string Sha256, string? FriendlyName = null)
 {
@@ -50,7 +51,7 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
     {
         var offset = bytes.AsSpan().StartsWith(new byte[] { 0xEF, 0xBB, 0xBF }) ? 3 : 0;
         var config = JsonSerializer.Deserialize<TrayConfig>(bytes.AsSpan(offset)) ?? throw new InvalidOperationException("Missing settings.");
-        if (config.SchemaVersion is not (1 or 2) || config.AcceptedPaths is null ||
+        if (config.SchemaVersion is not (1 or 2 or 3) || config.AcceptedPaths is null ||
             config.AcceptedPaths.Any(string.IsNullOrWhiteSpace)) throw new InvalidOperationException("Unsupported settings.");
         return config;
     }
@@ -66,7 +67,10 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
         return path;
     }
     internal PolicyImages Images(TrayConfig config) => new(Asset(config.PhotoFile, config.PhotoSha256), config.PhotoSha256,
-        Asset(config.BlackFile, config.BlackSha256), config.BlackSha256, config.AcceptedPaths);
+        Asset(config.BlackFile, config.BlackSha256), config.BlackSha256,
+        // Old AcceptedPaths mixed current aliases with history. Do not infer user
+        // intent from that history or silently keep trusting it on upgrade.
+        config.SchemaVersion >= 3 && !string.IsNullOrWhiteSpace(config.CurrentSourcePath) ? [config.CurrentSourcePath] : []);
     internal TrayConfig Prepare(TrayConfig current, SelectedImage selected, bool startup)
     {
         var relative = "assets/photo-" + selected.Sha256.ToLowerInvariant() + selected.Extension;
@@ -79,9 +83,12 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
             file.Flush(flushToDisk: true);
         }
         _ = Asset(relative, selected.Sha256);
-        var accepted = current.AcceptedPaths.Concat([Path.Combine(Root, current.PhotoFile),
-            Path.Combine(Root, current.BlackFile), selected.SourcePath]).Distinct(StringComparer.OrdinalIgnoreCase).TakeLast(64).ToArray();
-        return new(2, relative, selected.Sha256, current.BlackFile, current.BlackSha256, accepted, startup, selected.FriendlyName);
+        // Saving only the startup checkbox must not replace the original source
+        // alias with the cached preview path. Selecting another file replaces it.
+        var fromSavedPreview = StringComparer.OrdinalIgnoreCase.Equals(selected.SourcePath,
+            Path.GetFullPath(Path.Combine(Root, current.PhotoFile))) && selected.Sha256 == current.PhotoSha256;
+        var source = fromSavedPreview ? current.CurrentSourcePath : selected.SourcePath;
+        return new(3, relative, selected.Sha256, current.BlackFile, current.BlackSha256, [], startup, selected.FriendlyName, source);
     }
     public void Write(byte[] bytes)
     {

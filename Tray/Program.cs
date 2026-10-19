@@ -7,13 +7,15 @@ internal static class Program
     {
         var smoke = args is ["--smoke-test"];
         var selfTest = args is ["--self-test-config"];
+        var windowTest = args is ["--self-test-window"];
         var showConfig = args is ["--config"];
-        if (args.Length > 0 && !smoke && !selfTest && !showConfig && args is not ["--startup"]) return 2;
+        if (args.Length > 0 && !smoke && !selfTest && !windowTest && !showConfig && args is not ["--startup"]) return 2;
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
         ApplicationConfiguration.Initialize();
         try
         {
             if (selfTest) return ConfigSelfTests.Run();
+            if (windowTest) return WindowSelfTests.Run();
             var store = new SettingsStore(AppContext.BaseDirectory);
             var bytes = store.Read();
             var config = SettingsStore.Parse(bytes);
@@ -25,7 +27,7 @@ internal static class Program
         }
         catch (Exception error)
         {
-            if (selfTest || smoke)
+            if (selfTest || smoke || windowTest)
             {
                 var folder = Path.Combine(AppContext.BaseDirectory, "runtime");
                 Directory.CreateDirectory(folder);

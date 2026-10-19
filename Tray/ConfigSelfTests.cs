@@ -46,6 +46,29 @@ internal static class ConfigSelfTests
             store, startup, fake, _ => { }, (_, _) => { });
         Assert(startup.Value is null && startup.Writes == 2, "Explicit startup opt-out");
 
+        Assert(candidate.SchemaVersion == 3 && candidate.AcceptedPaths.Length == 0 && candidate.CurrentSourcePath == next,
+            "Only the current source alias is retained");
+        Assert(store.Images(initial).AcceptedPaths.Length == 0, "Legacy history is not automatically trusted on upgrade");
+        var preview = SelectedImage.Read(store.Asset(candidate.PhotoFile, candidate.PhotoSha256));
+        Assert(store.Prepare(candidate, preview, false).CurrentSourcePath == next, "Saving a cached preview preserves the current source alias");
+        var switchingConfig = candidate;
+        for (var cycle = 0; cycle < 4; cycle++)
+        {
+            var chosen = cycle % 2 == 0 ? firstImage : selected;
+            fake.State = fake.State with { Wallpapers = fake.State.Wallpapers.Select(w => w with { WallpaperPath = chosen.SourcePath }).ToArray() };
+            var writesBeforeChoice = fake.Calls;
+            _ = Catch(() => WallpaperPolicy.Repair(store.Images(switchingConfig), fake.State, fake, _ => { }));
+            Assert(fake.Calls == writesBeforeChoice && fake.State.Wallpapers.All(w => w.WallpaperPath == chosen.SourcePath),
+                "A previously used image is preserved until explicit adoption");
+            var replacement = store.Prepare(switchingConfig, chosen, false);
+            ConfigWorkflow.Apply(replacement, store.Images(replacement), store.Read(), null, store, startup, fake, _ => { }, (_, _) => { });
+            switchingConfig = replacement;
+        }
+        // Reapplication of the CURRENT source on all monitors can still be repaired.
+        var activeImages = store.Images(switchingConfig);
+        fake.State = fake.State with { Wallpapers = fake.State.Wallpapers.Select(w => w with { WallpaperPath = switchingConfig.CurrentSourcePath }).ToArray() };
+        Assert(WallpaperPolicy.Repair(activeImages, fake.State, fake, _ => { }), "Current-image reset still repairs black side monitors");
+
         foreach (var failure in new[] { "setter", "settings", "startup", "rollback" })
         {
             File.WriteAllBytes(Path.Combine(folder, "settings.json"), bytes);
@@ -94,7 +117,7 @@ internal static class ConfigSelfTests
         File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(new
         {
             Passed = true, NativeWallpaperSetters = 0, NativeRegistryWrites = 0,
-            Tests = new[] { "selected image", "primary only", "startup off", "original preserved", "setter/settings/startup failure rollback",
+            Tests = new[] { "selected image", "primary only", "startup off", "original preserved", "A-B-A-B-A repeated adoption", "legacy history not trusted", "current-image reset", "setter/settings/startup failure rollback",
                 "failed rollback reporting", "external changes", "asset boundary/hash", "invalid image", "preview and cancel" }
         }, SettingsStore.JsonOptions));
         return 0;

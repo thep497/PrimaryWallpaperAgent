@@ -154,7 +154,12 @@ internal sealed class AgentContext : ApplicationContext
     private void ShowConfig()
     {
         if (smoke) return;
-        if (configForm is not null) { configForm.Activate(); return; }
+        if (configForm is not null)
+        {
+            WindowPresentation.Reveal(configForm);
+            Log("CONFIG_REVEALED; nativeVisible=" + WindowPresentation.IsVisible(configForm));
+            return;
+        }
         try
         {
             if (!store.Read().SequenceEqual(configBytes))
@@ -186,7 +191,9 @@ internal sealed class AgentContext : ApplicationContext
                     catch (Exception error) { Pause(error, requireConfig: true); throw; }
                 }, OpenLog);
             configForm = form;
-            Log("CONFIG_OPEN; preview only until Save");
+            form.Load += (_, _) => form.BeginInvoke((Action)(() =>
+                Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
+            Log("CONFIG_REQUESTED; preview only until Save");
             var result = form.ShowDialog();
             if (result != DialogResult.OK)
             {

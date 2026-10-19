@@ -1,5 +1,6 @@
 namespace PrimaryWallpaperAgent;
 
+// AcceptedPaths means aliases of the CURRENT image only, never image history.
 // No monitor IDs or session number are persisted as policy inputs.
 internal sealed record PolicyImages(string PhotoPath, string PhotoSha256, string BlackPath,
     string BlackSha256, string[] AcceptedPaths);
@@ -15,7 +16,7 @@ internal static class WallpaperPolicy
             throw new PolicyConflictException("Wallpaper mode changed. Select Picture / Fill before resuming.");
         var known = images.AcceptedPaths.Concat([images.PhotoPath, images.BlackPath]);
         if (active.Any(w => !known.Contains(w.WallpaperPath, StringComparer.OrdinalIgnoreCase)))
-            throw new PolicyConflictException("An unfamiliar wallpaper was selected. Paused to preserve your choice.");
+            throw new PolicyConflictException("Wallpaper differs from the current chosen image. Paused to preserve your choice, even if used previously.");
         var plan = new TrialPlan(1, "tray", images.PhotoPath, images.PhotoPath, images.PhotoSha256,
             images.BlackPath, images.BlackSha256, current);
         if (TrialEngine.Matches(plan, current, restored: false)) return false;

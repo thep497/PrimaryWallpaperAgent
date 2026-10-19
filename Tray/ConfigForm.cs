@@ -51,6 +51,7 @@ internal sealed class ConfigForm : Form
         layout.Controls.Add(footer, 0, 9);
         AcceptButton = apply;
         CancelButton = cancel;
+        Load += (_, _) => BeginInvoke((Action)(() => WindowPresentation.Reveal(this)));
         ShowSelected();
     }
     private void Browse()
