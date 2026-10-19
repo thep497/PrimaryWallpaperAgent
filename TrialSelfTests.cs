@@ -1,0 +1,104 @@
+namespace PrimaryWallpaperAgent;
+
+internal static class TrialSelfTests
+{
+    internal static int Run()
+    {
+        foreach (var count in new[] { 1, 3, 5 })
+        {
+            var desktop = new FakeDesktop(count);
+            var plan = Plan(desktop.State);
+            TrialEngine.Apply(plan, desktop, _ => { });
+            Assert(TrialEngine.Matches(plan, desktop.State, false), $"Apply with {count} displays");
+            TrialEngine.Restore(plan, desktop);
+            Assert(TrialEngine.Matches(plan, desktop.State, true), $"Restore with {count} displays");
+        }
+        var partialFailure = new FakeDesktop(3) { FailOnCall = 2 };
+        var partialPlan = Plan(partialFailure.State);
+        MustThrow(() => TrialEngine.Apply(partialPlan, partialFailure, _ => { }));
+        Assert(TrialEngine.Matches(partialPlan, partialFailure.State, true), "Rollback after a setter failure");
+
+        var failedRestore = new FakeDesktop(3) { FailFromCall = 2 };
+        var failedRestoreReported = false;
+        try { TrialEngine.Apply(Plan(failedRestore.State), failedRestore, _ => { }); }
+        catch (AggregateException) { failedRestoreReported = true; }
+        Assert(failedRestoreReported, "A failed rollback must be reported rather than claimed successful");
+
+        var ignoresMonitor = new FakeDesktop(3) { IgnoresMonitorId = true };
+        var ignoredPlan = Plan(ignoresMonitor.State);
+        MustThrow(() => TrialEngine.Apply(ignoredPlan, ignoresMonitor, _ => { }));
+        Assert(TrialEngine.Matches(ignoredPlan, ignoresMonitor.State, true), "Detect global side effect and restore");
+
+        var changedBefore = new FakeDesktop(3);
+        var beforePlan = Plan(changedBefore.State);
+        changedBefore.SwitchPrimary();
+        MustThrow(() => TrialEngine.Apply(beforePlan, changedBefore, _ => { }));
+        Assert(changedBefore.Calls == 0, "Changed primary rejected before any setter");
+
+        var changedDuring = new FakeDesktop(3) { SwitchAfterFirstCall = true };
+        var duringPlan = Plan(changedDuring.State);
+        MustThrow(() => TrialEngine.Apply(duringPlan, changedDuring, _ => { }));
+        Assert(TrialEngine.Matches(duringPlan, changedDuring.State, true), "Restore by monitor ID after primary changes mid-apply");
+
+        var invalid = new FakeDesktop(3);
+        var invalidPlan = Plan(invalid.State);
+        invalid.State = invalid.State with { TopologyStable = false };
+        MustThrow(() => TrialEngine.Apply(invalidPlan, invalid, _ => { }));
+        Assert(invalid.Calls == 0, "Unstable topology cannot reach a setter");
+
+        var changedImage = new FakeDesktop(3);
+        var imagePlan = Plan(changedImage.State);
+        changedImage.State = changedImage.State with { Wallpapers = changedImage.State.Wallpapers.Select(w => w with { WallpaperPath = "user-new.jpg" }).ToArray() };
+        MustThrow(() => TrialEngine.Apply(imagePlan, changedImage, _ => { }));
+        Assert(changedImage.Calls == 0, "User wallpaper change after preparation is preserved");
+        Console.WriteLine("TRIAL SELF-TESTS PASSED: 1/3/5 displays, restore, partial failure, failed rollback reporting, ignored monitor ID, primary changes before/during apply, unstable topology, changed wallpaper.");
+        Console.WriteLine("Tests used an in-memory desktop; no Windows settings were changed.");
+        return 0;
+    }
+
+    private static TrialPlan Plan(ProbeResult before) => new(1, "test", "original.jpg", "photo.jpg", "unused", "black.bmp", "unused", before);
+    private static void Assert(bool condition, string message)
+    {
+        if (!condition) throw new InvalidOperationException("TEST FAILED: " + message);
+    }
+    private static void MustThrow(Action action)
+    {
+        try { action(); }
+        catch (InvalidOperationException) { return; }
+        throw new InvalidOperationException("TEST FAILED: expected the operation to reject unsafe state.");
+    }
+
+    private sealed class FakeDesktop : ITrialDesktop
+    {
+        internal ProbeResult State;
+        internal int Calls;
+        internal int FailOnCall;
+        internal int FailFromCall;
+        internal bool IgnoresMonitorId;
+        internal bool SwitchAfterFirstCall;
+        internal FakeDesktop(int count)
+        {
+            var displays = Enumerable.Range(0, count).Select(i => new DisplayInfo($"DISPLAY{i}", i == 0,
+                new(i * 100, 0, (i + 1) * 100, 100), [new($"Monitor{i}", "test", $"id-{i}", 1)])).ToArray();
+            var wallpapers = displays.Select((d, i) => new WallpaperInfo((uint)i, $"id-{i}", 0, d.Bounds,
+                0, "original.jpg", "ExactDevicePath", d.GdiName, d.IsPrimary, true)).ToArray();
+            State = new(DateTimeOffset.UtcNow, "test", "test", 1, true, true, "#000000", 4, 1, displays, wallpapers, []);
+        }
+        public ProbeResult Capture() => State;
+        public void SetWallpaper(string monitorId, string path)
+        {
+            Calls++;
+            if (Calls == FailOnCall || (FailFromCall > 0 && Calls >= FailFromCall)) throw new InvalidOperationException("Injected setter failure.");
+            State = State with { Wallpapers = State.Wallpapers.Select(w => IgnoresMonitorId || w.MonitorId == monitorId ? w with { WallpaperPath = path } : w).ToArray() };
+            if (Calls == 1 && SwitchAfterFirstCall) SwitchPrimary();
+        }
+        internal void SwitchPrimary()
+        {
+            State = State with
+            {
+                Displays = State.Displays.Select((d, i) => d with { IsPrimary = i == 1 }).ToArray(),
+                Wallpapers = State.Wallpapers.Select((w, i) => w with { IsPrimary = i == 1 }).ToArray()
+            };
+        }
+    }
+}

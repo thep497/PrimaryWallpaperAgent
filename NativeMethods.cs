@@ -59,7 +59,8 @@ internal static class NativeMethods
 }
 
 // Native COM slot order must include setters between getters. These declarations
-// describe the ABI only: Phase 1 never calls a setter or any slideshow operation.
+// describe the ABI. The default probe never calls setters. Only explicit Phase 2
+// trial commands call SetWallpaper for individual nonempty monitor IDs.
 // Source: Microsoft's ShObjIdl_core.h, IDesktopWallpaper.
 [ComImport]
 [Guid("B92B56A9-8B55-4E14-9A89-0199BBB6F93B")]

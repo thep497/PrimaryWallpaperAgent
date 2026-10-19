@@ -2,7 +2,9 @@
 
 เป้าหมายสุดท้าย: แสดงภาพ wallpaper บน Windows Primary Display เพียงจอเดียว และให้จออื่นเป็นสีดำ โดยปรับเมื่อเสียบ/ถอดจอหรือสลับ primary ไม่ผูกกับยี่ห้อหรือหมายเลขจอ
 
-## สถานะปัจจุบัน: Phase 1 — Console Probe แบบ read-only
+## สถานะปัจจุบัน: Probe แบบ read-only + Phase 2 ทดลองเปลี่ยนครั้งเดียว
+
+คำสั่ง Probe เดิมยังอ่านอย่างเดียว ส่วน [Phase 2 one-shot trial](PHASE2-TRIAL.md) มีคำสั่ง `trial-apply` / `trial-restore` ที่เปลี่ยน wallpaper อย่างชัดเจน ผู้ใช้อนุญาตการทดลองแล้ว ยังไม่มี watcher/tray/autostart
 
 - C# / .NET 10 (`net10.0-windows`), SDK 10.0.402, ไม่มี NuGet package ภายนอก
 - อ่านจอที่ใช้งานใน Windows session ปัจจุบันผ่าน `EnumDisplayMonitors` และ `GetMonitorInfoW`
@@ -13,10 +15,10 @@
 - แยกรายการจอ detached/cached เมื่อ `GetMonitorRECT` คืน `S_FALSE`
 - ถ้าได้ error อื่นจะคง UNKNOWN พร้อม HRESULT; หาก ID ว่างจะไม่เรียก per-monitor getter และให้ HRESULT เป็น null
 - ตรวจ topology ซ้ำท้าย snapshot; ถ้ามีการเปลี่ยนระหว่างอ่านจะให้ตรวจใหม่
-- รันหนึ่งครั้งแล้วจบ ไม่มี watcher, tray, autostart หรือการเขียน registry
-- โปรแกรมไม่อ่านเนื้อหาไฟล์ภาพ ไม่เปลี่ยน wallpaper หรือ display settings; บันทึก snapshot ได้โดย redirect stdout เท่านั้น
+- Probe รันหนึ่งครั้งแล้วจบ ไม่มี watcher, tray, autostart หรือการเขียน registry โดยตรง
+- โหมด Probe ไม่อ่านเนื้อหาไฟล์ภาพหรือเปลี่ยน wallpaper; คำสั่ง Phase 2 อ่านภาพเฉพาะ source ที่ระบุและบันทึก state ตามเอกสาร Phase 2
 
-Native COM interface มี declaration ของ setter เพื่อรักษาลำดับ vtable ตาม Windows SDK แต่โค้ด Probe เรียกเฉพาะ getter เท่านั้น
+Native COM interface มี declaration ของ setter เพื่อรักษาลำดับ vtable ตาม Windows SDK โค้ด Probe เรียกเฉพาะ getter; โค้ด trial ที่ต้องเรียก explicit ใช้ SetWallpaper โดยระบุ monitor ID เสมอ
 
 ## Build และรันจาก VS Code Terminal (PowerShell)
 
