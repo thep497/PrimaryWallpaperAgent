@@ -59,6 +59,8 @@
 - ขั้นถัดไปคือ [bounded Console Guard](CONSOLE-GUARD-TEST.md) ก่อน tray/autostart; อาจมีภาพเดิมแวบขณะเปลี่ยน desktop
 - ไม่มี tray/autostart และไม่มีการแก้ registry โดยตรง
 
+หลักฐานเพิ่มเติมหลังทดลอง Guard: รอบ read-only Event Probe ภาพคงถูกต้องทั้ง 3 desktop โดยไม่มี setter (108 reads, 0 state transitions) ข้อจำกัด one-shot ข้างต้นเป็นผลที่เกิดในรอบนั้น ไม่ใช่กฎว่า Windows จะ reset ทุกครั้ง ดู EVENT-PROBE-TEST.md สำหรับข้อสรุปที่ปรับแล้ว
+
 ## แหล่งอ้างอิง
 
 - [Microsoft SetWallpaper](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-idesktopwallpaper-setwallpaper)

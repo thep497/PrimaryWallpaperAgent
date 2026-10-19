@@ -56,3 +56,5 @@ Phase 2 พิสูจน์แล้วว่าตั้งภาพแยก
 - Log บันทึก 20 samples, 2 repairs, elapsed 20.626 วินาที, exit code 0 และ Stopped with Ctrl+C
 - สอดคล้องกับการตั้งกฎกลับขณะ Guard ทำงานทั้งสอง desktop ไม่ใช่หลักฐานว่า Windows จำภาพแยกจอถาวรหลังปิดโปรแกรม
 - ยังไม่ได้วัด latency ของการเปลี่ยนภาพหรือทดสอบ desktop 3; ขั้นถัดไปเก็บ event timing แบบ read-only
+
+ผลถัดมาใน Event Probe: ผู้ใช้ทดสอบครบ 3 desktop โดยไม่มี Guard/setting writes ของโปรแกรมนี้ ภาพยังคงถูกต้องตลอดและ 108 reads มี state เดียว จึงแยกจากผล Guard ข้างต้น ไม่ถือว่าทุกรอบ switch จำเป็นต้อง repair ดู EVENT-PROBE-TEST.md

@@ -44,6 +44,26 @@ Observer ถือ mutex สำหรับกัน Guard/apply/restore ขอ�
 
 หลักฐาน self-test ล่าสุดอยู่ใน snapshots/event-probe-20261019_084957_307-61a7573e; ยังรอ manual Virtual Desktop event test เพื่อเลือกสัญญาณและเวลา debounce
 
+## ผล manual test: 3 Virtual Desktops
+
+- รอบ event-probe-20261019_085122_497-81f6ee85 เริ่ม 15:51:22 วันที่ 19 ตุลาคม 2569 (UTC+7) รันจริง 22.622 วินาที แล้วผู้ใช้หยุดด้วย Ctrl+C; exit code 0
+- ผู้ใช้ยืนยันว่าจอรองทั้งสองดำตลอดการสลับครบทั้ง 3 desktop
+- Observer อ่าน 108 samples มี state hash เดียว, wallpaper transitions=0 และ setter calls=0
+- เส้นทาง observer ถือ application write mutex ตลอดรอบ จึงกัน guard/apply/restore ของโปรแกรมนี้ระหว่างการวัดได้; หลังจบตรวจไม่พบ process ของ Agent ค้างอยู่
+- รับ WinEvents 130 ครั้ง: foreground 23, cloaked 55, uncloaked 52; dropped=0, callback errors=0
+- ไม่ได้รับ EVENT_SYSTEM_DESKTOPSWITCH, WM_SETTINGCHANGE, WM_DISPLAYCHANGE หรือ WM_THEMECHANGED ในรอบนี้
+- Generation-to-callback tick age: median 16 ms, P95/max 31 ms; ตัวเลขนี้ไม่ใช่ wallpaper update/repair latency
+- ไม่มีการเปลี่ยน wallpaper state ให้ใช้จับคู่ event-to-change timing จึงยังเลือกค่า debounce จากการเปลี่ยนภาพจริงไม่ได้
+- analysis.json ใน run directory มี event bursts และข้อสรุป; เก็บหลักฐานต้นฉบับไว้ครบ ไม่เขียนทับ
+
+## ข้อสรุปที่ปรับจากหลักฐานใหม่
+
+รอบ one-shot ก่อนหน้าพบภาพถูกตั้งกลับเมื่อสลับ desktop จริง แต่หลังผ่าน Guard แล้ว รอบ read-only นี้ภาพคงอยู่ครบ 3 desktop โดยไม่มี setter เพิ่ม จึงไม่ควรสรุปว่า Windows reset ทุกครั้งที่สลับ หรือ Agent จำเป็นต้องเขียนซ้ำทุกครั้ง สาเหตุของความต่างสองรอบยังไม่ได้ trace และยังไม่ยืนยันการคงค่าหลัง sign-out/restart/hotplug
+
+Foreground/cloak เป็น candidate trigger เพื่อปลุกให้ตรวจ effective policy ได้ ไม่ควรใช้เดี่ยว ๆ ระบุหมายเลข/ID ของ Virtual Desktop หรือสั่ง setter โดยไม่ตรวจภาพจริง ส่วน EVENT_SYSTEM_DESKTOPSWITCH ไม่ได้มาในรอบที่สลับจริงนี้ จึงยังใช้เป็นตัวกระตุ้นเพียงตัวเดียวไม่ได้
+
+ยังไม่แก้ Guard ให้ใช้ event หรือเพิ่ม tray/autostart หลังผลรอบนี้ ขั้นทดสอบถัดไปควรตรวจการเปลี่ยน primary กับ Guard เดิมที่มีอยู่ โดยให้ Notebook เป็น primary แล้วกลับ LG ก่อนทดลองถอด/เสียบจอ และคงการเขียนเฉพาะเมื่อ effective policy ต่างจากเป้าหมาย
+
 ## อ้างอิง Microsoft
 
 - [SetWinEventHook: message loop, out-of-context และ managed callback lifetime](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-setwineventhook)
