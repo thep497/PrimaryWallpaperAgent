@@ -24,8 +24,9 @@
 
 ## ยังไม่ได้ทดสอบ
 
-- Notebook เดี่ยว, ถอด/เสียบจอ, projector และ topology 3+ จออื่น; การสลับ primary ระหว่าง Notebook/LG ทดสอบกับ Guard จริงและผู้ใช้ยืนยันผ่านแล้ว ดู CONSOLE-GUARD-TEST.md
-- Virtual Desktops: ทดสอบการอ่าน A/B เมื่อสอง desktop ใช้ภาพเดียวกันแล้ว; ยังไม่ได้ทดสอบภาพต่างกันหรือการ apply ภาพแยกจอ ดู VIRTUAL-DESKTOP-TEST.md
-- Apply wallpaper policy, watcher, tray, autostart
+- Projector และจอจริงมากกว่า 3 จอ ยังไม่ได้ทดสอบ (การจำลอง 5 จอไม่ใช่หลักฐานฮาร์ดแวร์จริง)
+- Notebook เดี่ยว, ถอด/เสียบจอ 3 -> 1 -> 3 และสลับ primary ผ่านแล้ว ดู HOTPLUG-TEST.md และ CONSOLE-GUARD-TEST.md
+- Virtual Desktops: อ่าน A/B, apply แยกจอ, bounded Guard และการสลับครบ 3 desktops ผ่านการยืนยันจากผู้ใช้แล้ว ดู VIRTUAL-DESKTOP-TEST.md / EVENT-PROBE-TEST.md; ยังไม่ได้ทดสอบการเลือกภาพต่างกันในแต่ละ desktop
+- Tray และ autostart ยังไม่ได้ทดสอบ
 
 ต้องผ่านการตรวจ Virtual Desktops ก่อนเพิ่ม watcher/tray/autostart ตามขอบเขตที่ตกลงกัน
