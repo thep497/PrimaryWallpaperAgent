@@ -19,6 +19,7 @@ internal static class Program
             Console.WriteLine("  trial-restore-check <plan.json> (read only)");
             Console.WriteLine("  trial-apply <plan.json> | trial-restore <plan.json> (CHANGE WALLPAPER)");
             Console.WriteLine("  trial-status <plan.json> (reads settings and saves a snapshot)");
+            Console.WriteLine("  trial-guard <plan.json> <10-300 seconds> (BOUNDED automatic repair, Ctrl+C to stop)");
             Console.WriteLine("  --self-test-trial (in-memory tests, no Windows setting changes)");
             Console.WriteLine("Exit codes: 0 = complete snapshot; 1 = fatal error; 2 = incomplete/ambiguous snapshot or invalid arguments.");
             return 0;

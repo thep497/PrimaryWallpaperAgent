@@ -12,7 +12,7 @@
 - ถ้า topology/primary เปลี่ยนระหว่างเตรียมและ apply หรือ wallpaper เดิมถูกเปลี่ยน จะไม่เขียนทับ state ใหม่
 - ถ้า setter ล้มเหลวหรือ readback ไม่ตรง จะพยายาม restore และตรวจกลับ หาก restore ไม่สำเร็จจะรายงานชัดเจน
 - การทดลองนี้กำหนด Picture/Fill ที่มีอยู่เดิม ไม่แก้ background color, position หรือ slideshow settings
-- ยังไม่มี watcher, tray หรือ autostart
+- Phase 2 แบบ one-shot ไม่มี watcher; หลังทดสอบข้อจำกัดแล้วเพิ่ม bounded Console Guard สำหรับการทดลองในขั้นถัดไป ยังไม่มี tray/autostart
 
 ## คำสั่งคืนค่า (ให้รันบน desktop ที่ต้องการคืนค่า)
 
@@ -52,10 +52,12 @@
 - apply อีกครั้งเวลา 15:23:28 สำเร็จ: exit code 0, POLICY_READBACK_MATCH=True, ORIGINAL_READBACK_MATCH=False
 - จอ LG ที่เป็น primary ได้ภาพสำเนา local; จอ Notebook และจอแนวตั้งได้ black BMP; ไม่เขียนรายการส่วนเกิน 7 รายการ
 - ผู้ใช้ยืนยันภาพจริงแล้ว: LG มีภาพเดิม อีกสองจอเป็นสีดำ
-- ผลนี้ยืนยันเฉพาะ desktop ที่ใช้ apply ขณะนั้น ยังไม่รับรองการคงค่าข้าม Virtual Desktop หรือหลังเปลี่ยน topology
-- รอผู้ใช้สลับไปอีก desktop และรัน Inspect-WallpaperTrial.ps1 -Label P2-B โดยไม่มี apply ซ้ำ จากนั้นกลับ desktop เดิมเพื่อทดสอบการคงค่าและคืนค่า
-- restore ที่เปลี่ยนภาพจริงยังรอขั้นจบการทดลอง; ขณะนี้ผ่าน simulation และ native getter preflight เท่านั้น
-- ไม่มี watcher/tray/autostart และไม่มีการแก้ registry โดยตรง
+- ผลหลังสลับ desktop: ผู้ใช้ยืนยัน desktop 2 เป็นภาพเดิมทั้ง 3 จอ ก่อนและหลังรัน P2-B และเมื่อกลับ desktop 1 ก็เป็นภาพเดิมทั้ง 3 จอ
+- P2-B เวลา 15:25:22 และสถานะหลังกลับแชตคืน original source path ทั้ง 3 จอ; primary/topology ไม่เปลี่ยน POLICY_READBACK_MATCH=False และ ORIGINAL_READBACK_MATCH=True
+- ข้อสรุป: การตั้งภาพแยกจอสำเร็จเฉพาะขณะนั้น แต่การสลับ Virtual Desktop ทำให้ภาพแยกจอไม่คงอยู่บน Windows build 26300 เครื่องนี้ ไม่ได้ trace กลไกภายในหรือระบุ process ที่เขียนค่า
+- ตอนจบ one-shot experiment ภาพกลับตรง original snapshot อยู่แล้ว จึงไม่ได้เรียก restore setter เพิ่มโดยไม่จำเป็น; live restore command ยังผ่านเพียง simulation/native getter preflight
+- ขั้นถัดไปคือ [bounded Console Guard](CONSOLE-GUARD-TEST.md) ก่อน tray/autostart; อาจมีภาพเดิมแวบขณะเปลี่ยน desktop
+- ไม่มี tray/autostart และไม่มีการแก้ registry โดยตรง
 
 ## แหล่งอ้างอิง
 

@@ -19,7 +19,7 @@ Microsoft Support ระบุว่า เมื่อใช้หลาย des
 
 แผนข้อเสนอเดิมใน `plans/phase2-one-shot-proposal.json` เก็บไว้เป็นประวัติก่อนอนุญาต ส่วน run plan ที่ใช้จริงอ้างจาก `snapshots/phase2-current-plan.txt` พร้อม pre-apply state และ source image สำเนาที่ตรวจ hash แล้ว
 
-หลังได้รับอนุญาต source image แบบ exact path ได้ทดลอง apply สำเร็จเมื่อ 15:23:28 วันที่ 19 ตุลาคม 2569; readback ตรงแผน และผู้ใช้ยืนยัน LG มีภาพเดิม อีกสองจอดำแล้ว รอการทดสอบสลับ desktop แบบไม่ apply ซ้ำ ดู [PHASE2-TRIAL.md](PHASE2-TRIAL.md) สำหรับผลจริง ข้อผิดพลาดที่แก้ และคำสั่งคืนค่า
+หลังได้รับอนุญาต source image แบบ exact path ได้ทดลอง apply สำเร็จเมื่อ 15:23:28 วันที่ 19 ตุลาคม 2569; readback และภาพจริงตรงแผน แต่เมื่อสลับไป desktop 2 และกลับ desktop 1 ภาพกลับเป็นภาพเดิมทั้ง 3 จอ ตรงกันทั้ง snapshot และคำยืนยันผู้ใช้ จึงพิสูจน์ข้อจำกัดการคงค่าของ one-shot แล้ว ดู [PHASE2-TRIAL.md](PHASE2-TRIAL.md) และขั้นถัดไป [bounded Console Guard](CONSOLE-GUARD-TEST.md)
 
 ## ขอบเขต
 

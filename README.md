@@ -2,9 +2,9 @@
 
 เป้าหมายสุดท้าย: แสดงภาพ wallpaper บน Windows Primary Display เพียงจอเดียว และให้จออื่นเป็นสีดำ โดยปรับเมื่อเสียบ/ถอดจอหรือสลับ primary ไม่ผูกกับยี่ห้อหรือหมายเลขจอ
 
-## สถานะปัจจุบัน: Probe แบบ read-only + Phase 2 ทดลองเปลี่ยนครั้งเดียว
+## สถานะปัจจุบัน: Probe + one-shot trial + bounded Console Guard
 
-คำสั่ง Probe เดิมยังอ่านอย่างเดียว ส่วน [Phase 2 one-shot trial](PHASE2-TRIAL.md) มีคำสั่ง `trial-apply` / `trial-restore` ที่เปลี่ยน wallpaper อย่างชัดเจน ผู้ใช้อนุญาตการทดลองแล้ว ยังไม่มี watcher/tray/autostart
+คำสั่ง Probe เดิมยังอ่านอย่างเดียว [Phase 2 one-shot trial](PHASE2-TRIAL.md) ตั้งภาพแยกจอสำเร็จแต่ภาพถูกตั้งกลับเมื่อสลับ Virtual Desktop จึงเพิ่ม [Console Guard แบบจำกัดเวลาทดลอง](CONSOLE-GUARD-TEST.md) ให้รันเองได้ก่อนเพิ่ม tray/autostart
 
 - C# / .NET 10 (`net10.0-windows`), SDK 10.0.402, ไม่มี NuGet package ภายนอก
 - อ่านจอที่ใช้งานใน Windows session ปัจจุบันผ่าน `EnumDisplayMonitors` และ `GetMonitorInfoW`

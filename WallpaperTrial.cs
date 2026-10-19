@@ -164,7 +164,8 @@ internal static class WallpaperTrial
             Prepare(root, source);
             return 0;
         }
-        if (args.Length != 2 || args[0] is not ("trial-apply" or "trial-restore-check" or "trial-restore" or "trial-status"))
+        var guardCommand = args is ["trial-guard", _, _];
+        if (!guardCommand && (args.Length != 2 || args[0] is not ("trial-apply" or "trial-restore-check" or "trial-restore" or "trial-status")))
             throw new ArgumentException("Usage: trial-prepare <source-image> | trial-apply|trial-restore-check|trial-restore|trial-status <plan.json>");
 
         var planPath = Path.GetFullPath(args[1]);
@@ -172,6 +173,14 @@ internal static class WallpaperTrial
         var plan = JsonSerializer.Deserialize<TrialPlan>(File.ReadAllText(planPath)) ?? throw new InvalidDataException("Invalid trial plan.");
         ValidatePlan(root, plan);
         var desktop = new NativeTrialDesktop();
+        using var writeLease = args[0] is "trial-apply" or "trial-restore" or "trial-guard" ? new WallpaperWriteLease() : null;
+        if (guardCommand)
+        {
+            if (!int.TryParse(args[2], NumberStyles.None, CultureInfo.InvariantCulture, out var seconds))
+                throw new ArgumentException("Guard duration must be an integer from 10 to 300 seconds.");
+            desktop.VerifyReadConnection();
+            return WallpaperGuard.Run(plan, desktop, seconds, Path.GetDirectoryName(planPath)!);
+        }
         if (args[0] == "trial-restore-check")
         {
             TrialEngine.RequireSameTopology(plan, desktop.Capture());

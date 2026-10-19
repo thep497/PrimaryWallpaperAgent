@@ -51,8 +51,28 @@ internal static class TrialSelfTests
         changedImage.State = changedImage.State with { Wallpapers = changedImage.State.Wallpapers.Select(w => w with { WallpaperPath = "user-new.jpg" }).ToArray() };
         MustThrow(() => TrialEngine.Apply(imagePlan, changedImage, _ => { }));
         Assert(changedImage.Calls == 0, "User wallpaper change after preparation is preserved");
+
+        var guardDesktop = new FakeDesktop(3);
+        var guardPlan = Plan(guardDesktop.State);
+        Assert(WallpaperGuard.RepairIfNeeded(guardPlan, guardDesktop.State, guardDesktop, _ => { }), "Guard repairs initial drift");
+        var writesAfterRepair = guardDesktop.Calls;
+        Assert(!WallpaperGuard.RepairIfNeeded(guardPlan, guardDesktop.State, guardDesktop, _ => { }) && guardDesktop.Calls == writesAfterRepair,
+            "Guard must not write matching wallpapers repeatedly");
+        guardDesktop.State = guardDesktop.State with { Wallpapers = guardDesktop.State.Wallpapers.Select(w => w with { WallpaperPath = "original.jpg" }).ToArray() };
+        Assert(WallpaperGuard.RepairIfNeeded(guardPlan, guardDesktop.State, guardDesktop, _ => { }), "Guard repairs a desktop-switch reset");
+        guardDesktop.SwitchPrimary();
+        Assert(WallpaperGuard.RepairIfNeeded(guardPlan, guardDesktop.State, guardDesktop, _ => { }), "Guard follows a changed primary");
+        Assert(TrialEngine.Matches(guardPlan with { Before = guardDesktop.State }, guardDesktop.State, false), "Guard uses the new primary rather than old index");
+        var notebookOnly = new FakeDesktop(1);
+        Assert(WallpaperGuard.RepairIfNeeded(guardPlan, notebookOnly.State, notebookOnly, _ => { }), "Guard accepts a changed display count");
+        Assert(notebookOnly.State.Wallpapers[0].WallpaperPath == "photo.jpg", "Single display receives photograph");
+        var unknownImage = new FakeDesktop(3);
+        unknownImage.State = unknownImage.State with { Wallpapers = unknownImage.State.Wallpapers.Select(w => w with { WallpaperPath = "user-choice.jpg" }).ToArray() };
+        MustThrow(() => WallpaperGuard.RepairIfNeeded(guardPlan, unknownImage.State, unknownImage, _ => { }));
+        Assert(unknownImage.Calls == 0, "Guard preserves unknown user-selected images");
         Console.WriteLine("TRIAL SELF-TESTS PASSED: 1/3/5 displays, restore, partial failure, failed rollback reporting, ignored monitor ID, primary changes before/during apply, unstable topology, changed wallpaper.");
         Console.WriteLine("Tests used an in-memory desktop; no Windows settings were changed.");
+        Console.WriteLine("GUARD SELF-TESTS PASSED: drift, no redundant writes, desktop reset, changed primary, display count, unknown-image stop.");
         return 0;
     }
 
