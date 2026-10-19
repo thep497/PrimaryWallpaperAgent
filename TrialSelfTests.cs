@@ -127,7 +127,7 @@ internal static class TrialSelfTests
         throw new InvalidOperationException("TEST FAILED: expected the operation to reject unsafe state.");
     }
 
-    private sealed class FakeDesktop : ITrialDesktop
+    internal sealed class FakeDesktop : ITrialDesktop
     {
         internal ProbeResult State;
         internal int Calls;

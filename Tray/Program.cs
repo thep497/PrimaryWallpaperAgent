@@ -1,10 +1,4 @@
-using System.Security.Cryptography;
-using System.Text.Json;
-
 namespace PrimaryWallpaperAgent.Tray;
-
-internal sealed record TrayConfig(int SchemaVersion, string PhotoFile, string PhotoSha256,
-    string BlackFile, string BlackSha256, string[] AcceptedPaths);
 
 internal static class Program
 {
@@ -12,39 +6,35 @@ internal static class Program
     private static int Main(string[] args)
     {
         var smoke = args is ["--smoke-test"];
-        if (args.Length > 0 && !smoke) return 2;
+        var selfTest = args is ["--self-test-config"];
+        var showConfig = args is ["--config"];
+        if (args.Length > 0 && !smoke && !selfTest && !showConfig && args is not ["--startup"]) return 2;
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
         ApplicationConfiguration.Initialize();
         try
         {
-            var config = JsonSerializer.Deserialize<TrayConfig>(File.ReadAllText(
-                Path.Combine(AppContext.BaseDirectory, "settings.json")))
-                ?? throw new InvalidOperationException("Missing settings.");
-            if (config.SchemaVersion != 1 || config.AcceptedPaths is null)
-                throw new InvalidOperationException("Unsupported settings.");
-            var images = new PolicyImages(Asset(config.PhotoFile, config.PhotoSha256), config.PhotoSha256,
-                Asset(config.BlackFile, config.BlackSha256), config.BlackSha256, config.AcceptedPaths);
+            if (selfTest) return ConfigSelfTests.Run();
+            var store = new SettingsStore(AppContext.BaseDirectory);
+            var bytes = store.Read();
+            var config = SettingsStore.Parse(bytes);
+            _ = store.Images(config);
             using var lease = new WallpaperWriteLease();
-            using var context = new AgentContext(images, smoke);
+            using var context = new AgentContext(store, config, bytes, smoke, showConfig);
             Application.Run(context);
             return 0;
         }
         catch (Exception error)
         {
+            if (selfTest || smoke)
+            {
+                var folder = Path.Combine(AppContext.BaseDirectory, "runtime");
+                Directory.CreateDirectory(folder);
+                File.WriteAllText(Path.Combine(folder, "last-test-error.txt"), error.ToString());
+                return 1;
+            }
             MessageBox.Show(error.Message, "PrimaryWallpaperAgent — เปิดไม่ได้", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
     }
 
-    internal static string Asset(string relative, string expectedHash)
-    {
-        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "assets")) + Path.DirectorySeparatorChar;
-        var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, relative));
-        if (Path.IsPathRooted(relative) || !path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Image must be inside the application's assets folder.");
-        using var stream = File.OpenRead(path);
-        if (!Convert.ToHexString(SHA256.HashData(stream)).Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Image checksum changed; rebuild the package before starting.");
-        return path;
-    }
 }
