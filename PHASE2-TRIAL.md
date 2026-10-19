@@ -41,13 +41,21 @@
 - เปลี่ยน primary ก่อน/ระหว่าง apply, topology ไม่ stable และ wallpaper ถูกเปลี่ยนหลัง prepare
 - Build ตั้ง TreatWarningsAsErrors; ผลการรันจริงต้องบันทึกแยกจากผล simulation
 
-## สถานะก่อนทดลองจริง
+## ผลทดลองจริง — 19 ตุลาคม 2569 (UTC+7)
 
 - Build และ in-memory safety tests ผ่านแล้ว
 - source image สำเนา local ขนาด 2,107,951 bytes และ SHA-256 ตรงต้นฉบับ
 - black BMP header/dimensions/pixels ผ่านการตรวจ
-- `trial-restore-check` ผ่านโดยไม่มี setter
-- ยังรอ apply หนึ่งครั้งและผู้ใช้ยืนยันภาพบนจอจริง ก่อนทดสอบสลับ desktop
+- `trial-restore-check` ผ่านโดยไม่มี setter รวม real COM getter regression check
+- ครั้งแรกเวลา 15:21:57 ล้มเหลวจาก COM RCW lifetime ในโค้ด: Probe ใช้ FinalRelease ทำให้ object อีกส่วนหลุดจาก RCW ไม่ใช่หลักฐานว่า Windows ไม่รองรับ setter; การอ่าน status จาก process ใหม่ยืนยันว่าภาพเดิมยังตรงครบ 3 จอ
+- แก้โดยจำกัด COM activation ให้มีอายุเฉพาะ operation และใช้ Release แบบสมดุล พร้อมทดสอบ nested Probe + getter จริงก่อน setter; บันทึกใน commit `9c6b5a7`
+- apply อีกครั้งเวลา 15:23:28 สำเร็จ: exit code 0, POLICY_READBACK_MATCH=True, ORIGINAL_READBACK_MATCH=False
+- จอ LG ที่เป็น primary ได้ภาพสำเนา local; จอ Notebook และจอแนวตั้งได้ black BMP; ไม่เขียนรายการส่วนเกิน 7 รายการ
+- ผู้ใช้ยืนยันภาพจริงแล้ว: LG มีภาพเดิม อีกสองจอเป็นสีดำ
+- ผลนี้ยืนยันเฉพาะ desktop ที่ใช้ apply ขณะนั้น ยังไม่รับรองการคงค่าข้าม Virtual Desktop หรือหลังเปลี่ยน topology
+- รอผู้ใช้สลับไปอีก desktop และรัน Inspect-WallpaperTrial.ps1 -Label P2-B โดยไม่มี apply ซ้ำ จากนั้นกลับ desktop เดิมเพื่อทดสอบการคงค่าและคืนค่า
+- restore ที่เปลี่ยนภาพจริงยังรอขั้นจบการทดลอง; ขณะนี้ผ่าน simulation และ native getter preflight เท่านั้น
+- ไม่มี watcher/tray/autostart และไม่มีการแก้ registry โดยตรง
 
 ## แหล่งอ้างอิง
 

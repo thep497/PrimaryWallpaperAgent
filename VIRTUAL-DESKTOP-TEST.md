@@ -15,11 +15,11 @@
 
 Microsoft Support ระบุว่า เมื่อใช้หลาย desktop การตั้ง background picture แยกตาม monitor ไม่รองรับ ข้อนี้เป็นข้อจำกัดที่ผู้ผลิตระบุ ไม่ใช่หลักฐานว่า COM setter จะล้มเหลวบนเครื่องนี้ เพราะยังไม่ได้ทดลองเขียน
 
-จึงยังไม่เพิ่ม watcher/tray/autostart เสนอให้จบช่วง read-only แล้วเข้าสู่ Phase 2 ทดลอง apply หนึ่งครั้ง: ภาพเดิมบน primary และภาพดำบน secondary จากนั้นผู้ใช้สลับ desktop เพื่อดูว่าคงค่า ถูกใช้ร่วมกัน หรือถูก Windows แทนที่ แล้วคืนค่าเดิม
+จึงยังไม่เพิ่ม watcher/tray/autostart ผู้ใช้อนุญาตเข้าสู่ Phase 2 แล้ว: ทดลอง apply หนึ่งครั้งให้ภาพเดิมบน primary และภาพดำบน secondary จากนั้นผู้ใช้สลับ desktop เพื่อดูว่าคงค่า ถูกใช้ร่วมกัน หรือถูก Windows แทนที่ แล้วคืนค่าเดิม
 
-แผนที่ยังเรียกใช้งานไม่ได้อยู่ใน `plans/phase2-one-shot-proposal.json` มีรายการจอ, source path, สถานะ PENDING_USER_AUTHORIZATION และ state สำหรับเตรียม restore ต้องสร้างและตรวจคำสั่งคืนค่าก่อนเรียก setter จริง
+แผนข้อเสนอเดิมใน `plans/phase2-one-shot-proposal.json` เก็บไว้เป็นประวัติก่อนอนุญาต ส่วน run plan ที่ใช้จริงอ้างจาก `snapshots/phase2-current-plan.txt` พร้อม pre-apply state และ source image สำเนาที่ตรวจ hash แล้ว
 
-ยังไม่ได้อ่านไฟล์ภาพใน OneDrive หรือเปลี่ยน wallpaper: ต้องได้รับอนุญาตให้พ้นขอบเขต Phase 1 ที่ห้ามเปลี่ยน และอนุญาตการอ่าน source image แบบ exact path ก่อน
+หลังได้รับอนุญาต source image แบบ exact path ได้ทดลอง apply สำเร็จเมื่อ 15:23:28 วันที่ 19 ตุลาคม 2569; readback ตรงแผน และผู้ใช้ยืนยัน LG มีภาพเดิม อีกสองจอดำแล้ว รอการทดสอบสลับ desktop แบบไม่ apply ซ้ำ ดู [PHASE2-TRIAL.md](PHASE2-TRIAL.md) สำหรับผลจริง ข้อผิดพลาดที่แก้ และคำสั่งคืนค่า
 
 ## ขอบเขต
 
