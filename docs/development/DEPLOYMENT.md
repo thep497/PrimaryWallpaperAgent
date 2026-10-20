@@ -43,3 +43,14 @@ The --package-check diagnostic creates isolated data, verifies actual Thai/Engli
 
 - [Microsoft: Run and RunOnce](https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys)
 - [Microsoft: single-file deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview)
+
+## v0.3.1 activation and retention
+
+A second v0.3.1 launch asks the existing process to show Settings using a same-user/session named pipe. A duplicate startup launch exits quietly. The wallpaper-writer mutex still protects older tools; exit v0.3.0 once when upgrading.
+
+Managed runtime logs/diagnostics have 30-day retention and a best-effort 50 MiB target. Text logs rotate at 2 MiB with one predecessor. Current/locked/unknown files and junction targets are preserved; settings/assets are untouched. See [test details](../testing/MAINTENANCE-TEST.md).
+
+The Settings header version link opens About with the actual version/data location and Releases/data-folder actions. Automatic updating remains separate future work.
+
+- [Microsoft: PipeOptions.CurrentUserOnly](https://learn.microsoft.com/en-us/dotnet/api/system.io.pipes.pipeoptions?view=net-10.0)
+- [Microsoft: foreground activation permission](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-allowsetforegroundwindow)

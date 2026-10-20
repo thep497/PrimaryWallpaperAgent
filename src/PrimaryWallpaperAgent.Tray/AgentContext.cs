@@ -37,6 +37,7 @@ internal sealed class AgentContext : ApplicationContext
     private int samples;
     private int repairCount;
     private int? displayCount;
+    private TimeSpan nextLogCleanup;
 
     internal AgentContext(SettingsStore store, TrayConfig config, byte[] configBytes, bool smoke, bool showConfig, ITrialDesktop? desktopOverride = null, IStartupRegistration? startupOverride = null)
     {
@@ -51,7 +52,8 @@ internal sealed class AgentContext : ApplicationContext
         logFolder = Path.Combine(store.Root, "runtime", DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(logFolder);
         logPath = Path.Combine(logFolder, "agent.log");
-        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v0.3; two stable samples; startup writes only on explicit setting changes");
+        TrimLogs(force: true);
+        Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v" + AboutForm.VersionText + "; two stable samples; startup writes only on explicit setting changes");
         Log("UI_LANGUAGE_LOADED language=" + config.Language);
         Log("POLL_INTERVAL_LOADED milliseconds=" + timer.Interval);
         menu.Items.Add(status);
@@ -75,6 +77,7 @@ internal sealed class AgentContext : ApplicationContext
 
     private void Tick()
     {
+        TrimLogs();
         if (smoke && uptime.Elapsed.TotalMilliseconds >= PollingOptions.SmokeDurationMs(config.PollIntervalMs)) { ExitThread(); return; }
         if (liveSettings.IsApplying) return;
         if (openOnFirstTick) { openOnFirstTick = false; ShowConfig(); return; }
@@ -156,12 +159,20 @@ internal sealed class AgentContext : ApplicationContext
             UiText.T(requireConfig ? "PausedNewMessage" : "PausedErrorMessage", config.Language), ToolTipIcon.Warning);
     }
 
+    internal void RequestSettings()
+    {
+        if (smoke) return;
+        if (liveSettings.IsApplying) { openOnFirstTick = true; return; }
+        ShowConfig();
+    }
+
     private void ShowConfig()
     {
         if (smoke) return;
         if (configForm is not null)
         {
             WindowPresentation.Reveal(configForm);
+            if (configForm.OwnedForms.LastOrDefault(form => form.Visible) is { } owned) WindowPresentation.Reveal(owned);
             Log("CONFIG_REVEALED; nativeVisible=" + WindowPresentation.IsVisible(configForm));
             return;
         }
@@ -196,7 +207,7 @@ internal sealed class AgentContext : ApplicationContext
                     return image;
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
-            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage);
+            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
@@ -255,9 +266,26 @@ internal sealed class AgentContext : ApplicationContext
         icon.Icon = !config.HasChosenImage ? trayIcons.Attention : paused ? needsConfig || statusKey == "StatusPausedError" ? trayIcons.Attention : trayIcons.Paused : trayIcons.Running;
         configForm?.RefreshAgentState();
     }
-    private void Log(string message) => File.AppendAllText(logPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}");
-    private void Save(string name, object value) => File.WriteAllText(Path.Combine(logFolder, name),
-        JsonSerializer.Serialize(value, new JsonSerializerOptions { WriteIndented = true }));
+    private void Log(string message)
+    {
+        try
+        {
+            if (LogRetention.AppendBounded(logPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}")) TrimLogs(force: true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
+    private void Save(string name, object value)
+    {
+        File.WriteAllText(Path.Combine(logFolder, name), JsonSerializer.Serialize(value, SettingsStore.JsonOptions));
+        TrimLogs(force: true);
+    }
+    private void TrimLogs(bool force = false)
+    {
+        if (!force && uptime.Elapsed < nextLogCleanup) return;
+        nextLogCleanup = uptime.Elapsed + TimeSpan.FromHours(1);
+        try { LogRetention.Prune(store.Root, logPath, DateTime.UtcNow); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+    }
     private void OpenLog(string? language = null)
     {
         language ??= config.Language;

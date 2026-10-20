@@ -21,3 +21,4 @@
 - [Immediate settings and simplified tray](INSTANT-SETTINGS-TEST.md)
 - [Compact Settings and click hints](COMPACT-SETTINGS-TEST.md)
 - [Single-file release and first-run](RELEASE-TEST.md)
+- [v0.3.1 activation, log retention and About](MAINTENANCE-TEST.md)

@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.3.0')
+param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.3.1')
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $source = Join-Path $script:ProjectRoot "artifacts\releases\v$Version\win-x64\PrimaryWallpaperAgent.exe"
 if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw 'Publish the release before testing.' }

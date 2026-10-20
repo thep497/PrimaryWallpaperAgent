@@ -11,7 +11,7 @@ internal static class Program
         var smoke = args is ["--smoke-test"];
         var showConfig = args is ["--config"];
         if (args.Length > 0 && !smoke && !showConfig && !packageCheck && args is not ["--startup"]) return 2;
-        var language = "en";
+        var language = UiText.Normalize(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName);
         string? dataRoot = null;
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
         ApplicationConfiguration.Initialize();
@@ -21,12 +21,26 @@ internal static class Program
                 FirstRun.DataRoot(AppContext.BaseDirectory, Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
             var store = new SettingsStore(dataRoot);
             if (packageCheck) return CheckPackage(store);
-            using var lease = new WallpaperWriteLease();
+            using var instance = new InstanceCoordinator();
+            if (!instance.IsPrimary)
+            {
+                if (smoke) return 2;
+                if (!instance.NotifyAsync(showSettings: args is not ["--startup"]).GetAwaiter().GetResult())
+                    throw new UiMessageException("InstanceUnavailable");
+                return 0;
+            }
+            using var lease = AcquireWallpaperLease();
             var bytes = FirstRun.Open(store);
             var config = SettingsStore.Parse(bytes);
             language = config.Language;
             _ = store.Images(config);
             using var context = new AgentContext(store, config, bytes, smoke, showConfig || !config.HasChosenImage);
+            using var dispatcher = new Control();
+            _ = dispatcher.Handle;
+            instance.Listen(() =>
+            {
+                if (!dispatcher.IsDisposed) dispatcher.BeginInvoke((Action)context.RequestSettings);
+            });
             Application.Run(context);
             return 0;
         }
@@ -38,7 +52,9 @@ internal static class Program
                 {
                     var folder = Path.Combine(dataRoot, "runtime");
                     Directory.CreateDirectory(folder);
-                    File.AppendAllText(Path.Combine(folder, "startup-error.log"), error + Environment.NewLine);
+                    var path = Path.Combine(folder, "startup-error.log");
+                    LogRetention.AppendBounded(path, error + Environment.NewLine);
+                    LogRetention.Prune(dataRoot, path, DateTime.UtcNow);
                 }
             }
             catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
@@ -46,6 +62,12 @@ internal static class Program
                 MessageBox.Show(UiText.Error(error, language), UiText.Title("StartupErrorTitle", language), MessageBoxButtons.OK, MessageBoxIcon.Error);
             return 1;
         }
+    }
+
+    private static WallpaperWriteLease AcquireWallpaperLease()
+    {
+        try { return new WallpaperWriteLease(); }
+        catch (WallpaperLeaseBusyException error) { throw new UiMessageException("OlderInstanceRunning", error); }
     }
 
     // Explicit distribution diagnostic: no native desktop backend, writer lease or startup registration.
@@ -66,6 +88,8 @@ internal static class Program
                 imageConfigured: () => config.HasChosenImage);
             form.CreateControl();
             _ = UiText.T("ChooseImageFirst", language);
+            using var about = new AboutForm(language, store.Root, _ => { });
+            about.CreateControl();
         }
         var folder = Path.Combine(store.Root, "runtime");
         Directory.CreateDirectory(folder);

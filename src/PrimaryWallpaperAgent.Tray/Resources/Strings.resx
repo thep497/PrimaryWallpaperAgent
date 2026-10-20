@@ -244,4 +244,14 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="ChooseImageFirst">
     <value>Choose a picture or use the current primary image to start.</value>
   </data>
+  <data name="InstanceUnavailable"><value>The running app did not respond. Wait a moment and try again, or exit its tray icon before reopening.</value></data>
+  <data name="OlderInstanceRunning"><value>Another version or wallpaper tool is running. Exit it from the tray before opening this version.</value></data>
+  <data name="AboutTitle"><value>About</value></data>
+  <data name="AboutLink"><value>v{0} · About</value></data>
+  <data name="VersionLabel"><value>Version</value></data>
+  <data name="AboutDescription"><value>A picture on the Windows primary display. Other extended displays stay black.</value></data>
+  <data name="DataFolderLabel"><value>Settings, cached images and logs</value></data>
+  <data name="GitHubReleases"><value>GitHub Releases</value></data>
+  <data name="OpenDataFolder"><value>Open data folder</value></data>
+  <data name="OpenLocationFailed"><value>Unable to open this location. Check the browser or folder and try again.</value></data>
 </root>

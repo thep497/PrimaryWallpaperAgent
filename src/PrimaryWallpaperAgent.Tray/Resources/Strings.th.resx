@@ -244,4 +244,14 @@
   <data name="ChooseImageFirst">
     <value>เลือกไฟล์ภาพ หรือใช้ภาพจอหลักปัจจุบันเพื่อเริ่มทำงาน</value>
   </data>
+  <data name="InstanceUnavailable"><value>โปรแกรมที่เปิดอยู่ยังไม่ตอบสนอง รอสักครู่แล้วลองอีกครั้ง หรือออกจากโปรแกรมผ่าน Tray ก่อนเปิดใหม่</value></data>
+  <data name="OlderInstanceRunning"><value>มีโปรแกรมรุ่นอื่นหรือเครื่องมือจัด wallpaper เปิดอยู่ กรุณาออกจากตัวเดิมผ่าน Tray ก่อนเปิดรุ่นนี้</value></data>
+  <data name="AboutTitle"><value>เกี่ยวกับ</value></data>
+  <data name="AboutLink"><value>v{0} · เกี่ยวกับ</value></data>
+  <data name="VersionLabel"><value>เวอร์ชัน</value></data>
+  <data name="AboutDescription"><value>แสดงภาพบน Windows Primary Display เพียงจอเดียว จออื่นที่ Extend เป็นสีดำ</value></data>
+  <data name="DataFolderLabel"><value>โฟลเดอร์ settings ภาพที่เก็บไว้ และ log</value></data>
+  <data name="GitHubReleases"><value>GitHub Releases</value></data>
+  <data name="OpenDataFolder"><value>เปิดโฟลเดอร์ข้อมูล</value></data>
+  <data name="OpenLocationFailed"><value>เปิดตำแหน่งนี้ไม่ได้ กรุณาตรวจสอบเบราว์เซอร์หรือโฟลเดอร์แล้วลองใหม่</value></data>
 </root>

@@ -2,6 +2,8 @@
 
 ## 20 October 2026 — physical console after Remote session
 
+User update: normal launch and expected wallpaper behavior confirmed. Individual scenario results below have not all been reported; do not infer automatic Remote recovery or logon startup from this general confirmation.
+
 User confirmed on 19 October that the session was Remote. Native diagnostics reported WinDisc without display endpoints and could not match the physical monitors. Remote is a plausible explanation; verify at the physical console before concluding.
 
 Approved development chunks are complete: source layout, Thai/English UI, configurable polling, and app/tray icon design. Physical display, Remote recovery, icon-state interaction and DPI tests below remain open.

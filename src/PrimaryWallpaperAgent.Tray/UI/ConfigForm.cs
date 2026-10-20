@@ -6,6 +6,7 @@ internal sealed class ConfigForm : Form
     private readonly PictureBox preview = new() { Name = "WallpaperPreview", Dock = DockStyle.Fill, BackColor = Color.FromArgb(25, 29, 36), SizeMode = PictureBoxSizeMode.Zoom, MinimumSize = new Size(240, 80) };
     private readonly Label filename = new() { Name = "ImageFilename", AutoSize = false, Height = 30, Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft };
     private readonly Label feedback = new() { Name = "FeedbackLabel", AutoSize = false, AutoEllipsis = true, Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6) };
+    private readonly LinkLabel about = new() { Name = "AboutLink", AutoSize = true, Anchor = AnchorStyles.Right, Margin = new Padding(12, 5, 0, 8) };
     private readonly Label heading = new() { AutoSize = true, Margin = new Padding(0, 0, 0, 8) };
     private readonly Label status = new() { Name = "AgentStatus", AutoSize = false, AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = Color.FromArgb(50, 85, 120), Margin = new Padding(0, 0, 0, 12) };
     private readonly Label languageLabel = new() { AutoSize = true, Margin = new Padding(0, 7, 10, 0) };
@@ -22,6 +23,8 @@ internal sealed class ConfigForm : Form
     private readonly Button errorDetails;
     private readonly List<(Button Button, string Title, string Body)> helpTopics = [];
     private SettingsHelpPopup? helpPopup;
+    private readonly string dataRoot;
+    private readonly Action<string>? openAboutTarget;
     private readonly Func<string, string> statusText;
     private readonly Action<ConfigSubmission> apply;
     private readonly Action<Exception>? reportError;
@@ -42,9 +45,11 @@ internal sealed class ConfigForm : Form
     internal ConfigForm(SelectedImage initial, bool startupEnabled, Func<string, string> statusText,
         Func<string> currentPrimary, Action<ConfigSubmission> apply, Action<string> openLog,
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
-        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null)
+        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null)
     {
         selected = initial;
+        this.dataRoot = dataRoot;
+        this.openAboutTarget = openAboutTarget;
         this.currentPrimary = currentPrimary;
         this.statusText = statusText;
         this.apply = apply;
@@ -69,7 +74,18 @@ internal sealed class ConfigForm : Form
         for (var i = 0; i < 8; i++)
             layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
         Controls.Add(layout);
-        layout.Controls.Add(heading, 0, 0);
+        var header = new TableLayoutPanel { Name = "SettingsHeader", AutoSize = true, Dock = DockStyle.Fill,
+            ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        header.Controls.Add(heading, 0, 0);
+        header.Controls.Add(about, 1, 0);
+        about.LinkClicked += (_, _) =>
+        {
+            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget);
+            dialog.ShowDialog(this);
+        };
+        layout.Controls.Add(header, 0, 0);
         status.Height = Font.Height + 8;
         layout.Controls.Add(status, 0, 1);
         layout.Controls.Add(preview, 0, 2);
@@ -194,6 +210,7 @@ internal sealed class ConfigForm : Form
         string T(string key) => UiText.T(key, language);
         Text = UiText.Title("ConfigTitle", language);
         heading.Text = T("ConfigHeading");
+        about.Text = UiText.T("AboutLink", language, AboutForm.VersionText);
         if (imageConfigured?.Invoke() == false) filename.Text = T("ChooseImageFirst");
         status.Text = statusText(language);
         languageLabel.Text = T("LanguageLabel");

@@ -115,6 +115,8 @@ internal static class WallpaperGuard
     }
 }
 
+internal sealed class WallpaperLeaseBusyException() : InvalidOperationException("Another wallpaper write/guard is running. Stop it before applying or restoring.");
+
 internal sealed class WallpaperWriteLease : IDisposable
 {
     private readonly Mutex mutex = new(false, @"Local\PrimaryWallpaperAgent.WallpaperWrite");
@@ -126,7 +128,7 @@ internal sealed class WallpaperWriteLease : IDisposable
         if (!owns)
         {
             mutex.Dispose();
-            throw new InvalidOperationException("Another wallpaper write/guard is running. Stop it before applying or restoring.");
+            throw new WallpaperLeaseBusyException();
         }
     }
     public void Dispose()
