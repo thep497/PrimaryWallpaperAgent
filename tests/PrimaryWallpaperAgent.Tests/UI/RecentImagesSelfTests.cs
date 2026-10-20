@@ -54,7 +54,7 @@ internal static class RecentImagesSelfTests
         ExpectFailure(() => SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(brokenConfig)));
 
         foreach (var language in new[] { "en", "th" })
-        foreach (var size in new[] { new Size(700, 640), new Size(640, 620), new Size(620, 620) })
+        foreach (var size in new[] { new Size(700, 600), new Size(640, 590), new Size(620, 590) })
         {
             using var form = OpenForm(live, language, size, Path.Combine(root, "IrisService", "missing.jpg"));
             var client = form.RectangleToScreen(form.ClientRectangle);
@@ -62,10 +62,13 @@ internal static class RecentImagesSelfTests
                 Assert(client.Contains(control.RectangleToScreen(control.ClientRectangle)), "All controls fit with four thumbnails: " + control.Name);
             Assert(Descendants(form).OfType<ScrollableControl>().All(control => !control.AutoScroll && !control.VerticalScroll.Visible && !control.HorizontalScroll.Visible),
                 "Four thumbnails require no scrollbars");
-            var preview = Find<PictureBox>(form, "WallpaperPreview");
+            Assert(form.Controls.Find("WallpaperPreview", true).Length == 0, "No duplicate preview");
+            var first = Find<Button>(form, "RecentImage0");
             var filename = Find<Label>(form, "ImageFilename");
-            Assert(preview.Height >= 80 && preview.RectangleToScreen(preview.ClientRectangle).Bottom <= filename.RectangleToScreen(filename.ClientRectangle).Top,
-                "Full image preview is not clipped: client=" + form.ClientSize + "; preview=" + preview.Bounds + "; filename=" + filename.Bounds + "; rows=" + string.Join(",", ((TableLayoutPanel)preview.Parent!).GetRowHeights()));
+            var pictureRect = first.RectangleToScreen(first.ClientRectangle);
+            var captionRect = filename.RectangleToScreen(filename.ClientRectangle);
+            Assert(pictureRect.Bottom <= captionRect.Top && captionRect.Left >= pictureRect.Left && captionRect.Right <= pictureRect.Right + 4,
+                "Selected name remains below the first picture");
             var before = store.Read();
             Find<Button>(form, "UseCurrentButton").PerformClick();
             Assert(Find<Label>(form, "FeedbackLabel").Text == UiText.T("WindowsImageUnavailable", language) &&

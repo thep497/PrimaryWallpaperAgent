@@ -287,4 +287,10 @@
   <data name="RecentImageUnavailable" xml:space="preserve"><value>ภาพที่เก็บไว้หายหรือถูกแก้ไข เลือกภาพล่าสุดอื่นหรือเลือกไฟล์</value></data>
   <data name="WindowsImageUnavailable" xml:space="preserve"><value>ไม่พบไฟล์ภาพที่ Windows อ้างถึง เลือกภาพล่าสุดหรือเลือกไฟล์</value></data>
   <data name="ImageFileMissing" xml:space="preserve"><value>ไม่พบไฟล์ภาพที่เลือก เลือกภาพล่าสุดหรือเลือกไฟล์ใหม่</value></data>
+  <data name="ThemeLabel" xml:space="preserve"><value>ธีม</value></data>
+  <data name="Theme_system" xml:space="preserve"><value>ตามระบบ</value></data>
+  <data name="Theme_light" xml:space="preserve"><value>สว่าง</value></data>
+  <data name="Theme_dark" xml:space="preserve"><value>มืด</value></data>
+  <data name="ThemeHint" xml:space="preserve"><value>เลือกธีมสว่างหรือมืด หรือให้ตามโหมดสีแอปของ Windows เปลี่ยนทันทีและจำค่าที่เลือก ใช้กับหน้าต่างและเมนู tray ของแอป ส่วนหน้าต่างเลือกไฟล์และข้อความระบบใช้สีตาม Windows</value></data>
+  <data name="InvalidTheme" xml:space="preserve"><value>เลือกธีมตามระบบ สว่าง หรือมืด</value></data>
 </root>

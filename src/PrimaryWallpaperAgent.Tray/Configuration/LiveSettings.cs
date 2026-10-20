@@ -41,7 +41,8 @@ internal sealed class LiveSettings(SettingsStore store, TrayConfig config, byte[
             var before = Config;
             var candidate = request.ApplyWallpaper ? store.Prepare(Config, request.Image, request.StartWithWindows) :
                 Config with { StartWithWindows = request.StartWithWindows };
-            candidate = candidate with { Language = UiText.Normalize(request.Language), PollIntervalMs = PollingOptions.Validate(request.PollIntervalMs) };
+            candidate = candidate with { Language = UiText.Normalize(request.Language), PollIntervalMs = PollingOptions.Validate(request.PollIntervalMs),
+                Theme = ThemeOptions.Validate(request.Theme ?? Config.Theme) };
             Commit(candidate, request.ApplyWallpaper);
             if (request.ApplyWallpaper && before.HasChosenImage && !StringComparer.OrdinalIgnoreCase.Equals(before.PhotoSha256, candidate.PhotoSha256))
                 previousImage = before;

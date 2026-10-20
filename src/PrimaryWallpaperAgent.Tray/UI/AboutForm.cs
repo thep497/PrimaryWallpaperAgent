@@ -8,10 +8,14 @@ internal sealed class AboutForm : Form
     internal static string VersionText => typeof(AboutForm).Assembly.GetName().Version is { } version ?
         $"{version.Major}.{version.Minor}.{version.Build}" : "unknown";
     private readonly Font headingFont;
+    private readonly ThemeManager themes;
+    private readonly bool ownsThemes;
     private readonly Icon applicationIcon = AppBranding.CreateApplicationIcon();
 
-    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null, UpdateController? updates = null)
+    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null, UpdateController? updates = null, ThemeManager? themes = null)
     {
+        ownsThemes = themes is null;
+        this.themes = themes ?? new ThemeManager();
         string T(string key) => UiText.T(key, language);
         Name = "AboutForm";
         Text = UiText.Title("AboutTitle", language);
@@ -46,6 +50,7 @@ internal sealed class AboutForm : Form
         layout.Controls.Add(actions);
         CancelButton = close;
         AcceptButton = close;
+        this.themes.Bind(this);
 
 
         void Open(string target)
@@ -63,6 +68,6 @@ internal sealed class AboutForm : Form
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) { applicationIcon.Dispose(); headingFont.Dispose(); }
+        if (disposing) { applicationIcon.Dispose(); headingFont.Dispose(); if (ownsThemes) themes.Dispose(); }
     }
 }

@@ -29,13 +29,15 @@ internal static class CompactSettingsSelfTests
             var client = form.RectangleToScreen(form.ClientRectangle);
             foreach (var control in visible.Where(control => control is Button or ComboBox or CheckBox))
                 Assert(client.Contains(control.RectangleToScreen(control.ClientRectangle)), "Interactive control fits client: " + control.Name);
-            var preview = Find<PictureBox>(form, "WallpaperPreview");
-            var actions = Find<TableLayoutPanel>(form, "ImageActions");
-            Assert(preview.RectangleToScreen(preview.ClientRectangle).Bottom <= actions.RectangleToScreen(actions.ClientRectangle).Top,
-                "Preview does not overlap actions");
+            Assert(form.Controls.Find("WallpaperPreview", true).Length == 0, "No duplicate large preview");
+            var first = Find<Button>(form, "RecentImage0");
+            var caption = Find<Label>(form, "ImageFilename");
+            Assert(first.RectangleToScreen(first.ClientRectangle).Bottom <= caption.RectangleToScreen(caption.ClientRectangle).Top,
+                "Selected filename sits below the first thumbnail");
             foreach (var topic in new[] {
                 ("ImageHelpButton", "ImageHelpText"),
                 ("LanguageHelpButton", "LanguageHint"),
+                ("ThemeHelpButton", "ThemeHint"),
                 ("PollHelpButton", "PollHint"),
                 ("StartupHelpButton", "StartupHint") })
             {
@@ -51,7 +53,7 @@ internal static class CompactSettingsSelfTests
             }
             Assert(changes == 0, "Help never changes settings/startup/wallpaper");
             if (size.Width == 700) Capture(form, Path.Combine(folder, "config-" + language + ".png"));
-            results.Add(new { Language = language, Width = form.ClientSize.Width, Height = form.ClientSize.Height, Scrollbars = false, HelpTopics = 4 });
+            results.Add(new { Language = language, Width = form.ClientSize.Width, Height = form.ClientSize.Height, Scrollbars = false, HelpTopics = 5 });
             Find<Button>(form, "CloseButton").PerformClick();
         }
         File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(new

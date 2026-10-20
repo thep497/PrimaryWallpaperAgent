@@ -7,6 +7,7 @@ internal sealed class AgentContext : ApplicationContext
 {
     private readonly SettingsStore store;
     private readonly LiveSettings liveSettings;
+    private readonly ThemeManager themes;
     private readonly UpdateController updates;
     private readonly System.Windows.Forms.Timer updateTimer = new() { Interval = 60000 };
     private bool exitForUpdate;
@@ -45,6 +46,7 @@ internal sealed class AgentContext : ApplicationContext
     internal AgentContext(SettingsStore store, TrayConfig config, byte[] configBytes, bool smoke, bool showConfig, ITrialDesktop? desktopOverride = null, IStartupRegistration? startupOverride = null)
     {
         this.store = store;
+        themes = new ThemeManager(config.Theme);
         desktop = desktopOverride ?? new NativeTrialDesktop();
         startup = startupOverride ?? new StartupRegistration();
         liveSettings = new LiveSettings(store, config, configBytes, startup, desktop, Log, Save);
@@ -73,6 +75,7 @@ internal sealed class AgentContext : ApplicationContext
         menu.Items.Add(new ToolStripSeparator());
         exitItem.Click += (_, _) => { if (!liveSettings.IsApplying) ExitThread(); };
         menu.Items.Add(exitItem);
+        themes.Bind(menu);
         icon = new NotifyIcon { Icon = trayIcons.Running, ContextMenuStrip = menu, Visible = true };
         updates.NewVersion += version => icon.ShowBalloonTip(8000, UiText.AppName,
             UiText.T("UpdateNotification", config.Language, version), ToolTipIcon.Info);
@@ -232,7 +235,7 @@ internal sealed class AgentContext : ApplicationContext
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
             }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates,
-            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage);
+            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage, theme: config.Theme, themes: themes);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
@@ -250,6 +253,7 @@ internal sealed class AgentContext : ApplicationContext
 
     private void AcceptSettingsChange(bool wallpaperApplied, int oldInterval)
     {
+        themes.SetMode(config.Theme);
         if (timer.Interval != config.PollIntervalMs) timer.Interval = config.PollIntervalMs;
         if (oldInterval != config.PollIntervalMs) previous = null;
         if (wallpaperApplied)
@@ -336,7 +340,7 @@ internal sealed class AgentContext : ApplicationContext
     }
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { updates.Dispose(); updateTimer.Dispose(); timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
+        if (disposing) { themes.Dispose(); updates.Dispose(); updateTimer.Dispose(); timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
         base.Dispose(disposing);
     }
 }

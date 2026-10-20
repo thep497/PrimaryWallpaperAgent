@@ -287,4 +287,10 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="RecentImageUnavailable" xml:space="preserve"><value>This saved picture is missing or changed. Choose another recent picture or Browse.</value></data>
   <data name="WindowsImageUnavailable" xml:space="preserve"><value>Windows points to a missing image. Choose a recent picture or Browse.</value></data>
   <data name="ImageFileMissing" xml:space="preserve"><value>The selected image file was not found. Choose a recent picture or Browse.</value></data>
+  <data name="ThemeLabel" xml:space="preserve"><value>Theme</value></data>
+  <data name="Theme_system" xml:space="preserve"><value>System</value></data>
+  <data name="Theme_light" xml:space="preserve"><value>Light</value></data>
+  <data name="Theme_dark" xml:space="preserve"><value>Dark</value></data>
+  <data name="ThemeHint" xml:space="preserve"><value>Choose Light or Dark, or follow the Windows app color setting with System. Changes apply immediately and are remembered. This controls the app's own windows and tray menu; Windows file pickers and system dialogs follow Windows.</value></data>
+  <data name="InvalidTheme" xml:space="preserve"><value>Choose System, Light or Dark.</value></data>
 </root>

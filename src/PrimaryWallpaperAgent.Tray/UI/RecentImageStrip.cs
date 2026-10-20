@@ -4,12 +4,17 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed class RecentImageStrip : TableLayoutPanel
 {
-    private readonly Label heading = new() { AutoSize = true, Margin = new Padding(0, 0, 0, 3) };
+    private readonly Label heading = new() { AutoSize = true, Margin = new Padding(0, 0, 0, 5) };
+    private readonly Label filename = new() { Name = "ImageFilename", AutoSize = false, AutoEllipsis = true,
+        Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Margin = new Padding(0, 3, 4, 0) };
+    private readonly Label empty = new() { Name = "RecentImagesEmpty", AutoSize = true, Dock = DockStyle.Fill,
+        Margin = new Padding(0, 12, 0, 12), MaximumSize = new Size(560, 0) };
     private readonly Button[] buttons = new Button[RecentImageHistory.Limit];
     private readonly ToolTip tips = new();
     private RecentImage[] entries = [];
     private string language = "en";
     private string currentHash = "";
+    private ThemePalette palette = ThemePalette.Light;
     internal event Action<RecentImage>? Chosen;
 
     internal RecentImageStrip()
@@ -19,20 +24,24 @@ internal sealed class RecentImageStrip : TableLayoutPanel
         Dock = DockStyle.Fill;
         Margin = new Padding(0, 0, 0, 5);
         ColumnCount = RecentImageHistory.Limit;
-        RowCount = 2;
+        RowCount = 3;
         Controls.Add(heading, 0, 0);
         SetColumnSpan(heading, RecentImageHistory.Limit);
         for (var i = 0; i < buttons.Length; i++)
         {
             ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25));
             var index = i;
-            var button = new Button { Name = "RecentImage" + i, Dock = DockStyle.Fill, Height = 60,
+            var button = new Button { Name = "RecentImage" + i, Dock = DockStyle.Fill, Height = 76,
                 FlatStyle = FlatStyle.Flat, BackgroundImageLayout = ImageLayout.Zoom,
                 BackColor = Color.FromArgb(25, 29, 36), Margin = new Padding(i == 0 ? 0 : 4, 0, i == 3 ? 0 : 4, 0) };
             button.Click += (_, _) => { if (index < entries.Length) Chosen?.Invoke(entries[index]); };
             buttons[i] = button;
             Controls.Add(button, i, 1);
         }
+        filename.Height = Font.Height + 8;
+        Controls.Add(filename, 0, 2);
+        Controls.Add(empty, 0, 1);
+        SetColumnSpan(empty, RecentImageHistory.Limit);
     }
 
     internal void SetImages(RecentImage[] images, string hash, string language, Func<RecentImage, SelectedImage> read)
@@ -53,30 +62,31 @@ internal sealed class RecentImageStrip : TableLayoutPanel
                 if (i >= entries.Length) continue;
                 try
                 {
-                    button.BackgroundImage = CreateThumbnail(read(entries[i]), button.BackColor);
+                    button.BackgroundImage = CreateThumbnail(read(entries[i]));
                     button.Enabled = true;
                 }
-                catch (Exception error) when (error is UiMessageException or ArgumentException or OutOfMemoryException) { } // One damaged historical asset cannot prevent Settings from opening.
+                catch (Exception error) when (error is UiMessageException or ArgumentException or OutOfMemoryException) { }
             }
-            Visible = entries.Length > 0;
+            filename.Visible = entries.Length > 0;
+            empty.Visible = entries.Length == 0;
             SetLanguage(language);
         }
         finally { ResumeLayout(performLayout: true); }
     }
 
-    private static Bitmap CreateThumbnail(SelectedImage image, Color background)
+    private static Bitmap CreateThumbnail(SelectedImage image)
     {
         using var source = image.Preview();
-        var thumbnail = new Bitmap(160, 60);
+        var thumbnail = new Bitmap(200, 88);
         try
         {
             using var graphics = Graphics.FromImage(thumbnail);
-            graphics.Clear(background);
+            graphics.Clear(Color.FromArgb(25, 29, 36));
             graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            var scale = Math.Min(154d / source.Width, 54d / source.Height);
+            var scale = Math.Min(194d / source.Width, 82d / source.Height);
             var width = Math.Max(1, (int)(source.Width * scale));
             var height = Math.Max(1, (int)(source.Height * scale));
-            graphics.DrawImage(source, (160 - width) / 2, (60 - height) / 2, width, height);
+            graphics.DrawImage(source, (200 - width) / 2, (88 - height) / 2, width, height);
             return thumbnail;
         }
         catch { thumbnail.Dispose(); throw; }
@@ -86,12 +96,18 @@ internal sealed class RecentImageStrip : TableLayoutPanel
     {
         language = value;
         heading.Text = UiText.T("RecentImages", language);
+        empty.Text = UiText.T("ChooseImageFirst", language);
+        filename.Text = entries.FirstOrDefault() is { } first ? first.Label ?? Path.GetFileName(first.PhotoFile) : "";
+        filename.Height = Font.Height + 8;
+        filename.AccessibleName = UiText.T("RecentCurrent", language) + ": " + filename.Text;
+        tips.SetToolTip(filename, filename.Text);
         for (var i = 0; i < entries.Length; i++)
         {
             var button = buttons[i];
             var entry = entries[i];
             var label = entry.Label ?? Path.GetFileName(entry.PhotoFile);
             var isCurrent = entry.Sha256.Equals(currentHash, StringComparison.OrdinalIgnoreCase);
+            button.Tag = isCurrent;
             var description = UiText.T("RecentImageChoice", language, i + 1, label) +
                 (isCurrent ? " · " + UiText.T("RecentCurrent", language) : "");
             button.AccessibleName = description;
@@ -99,9 +115,19 @@ internal sealed class RecentImageStrip : TableLayoutPanel
             button.Text = button.BackgroundImage is null ? UiText.T("RecentUnavailable", language) : "";
             button.ForeColor = Color.White;
             button.FlatAppearance.BorderSize = isCurrent ? 3 : 1;
-            button.FlatAppearance.BorderColor = isCurrent ? Color.FromArgb(56, 143, 220) : Color.FromArgb(110, 120, 135);
+            button.FlatAppearance.BorderColor = isCurrent ? palette.Accent : palette.Border;
             tips.SetToolTip(button, description + Environment.NewLine + button.AccessibleDescription);
         }
+    }
+
+    internal void ApplyPalette(ThemePalette value)
+    {
+        palette = value;
+        tips.BackColor = value.Surface;
+        tips.ForeColor = value.Text;
+        empty.ForeColor = value.Muted;
+        foreach (var button in buttons)
+            button.FlatAppearance.BorderColor = button.Tag is true ? value.Accent : value.Border;
     }
 
     protected override void Dispose(bool disposing)

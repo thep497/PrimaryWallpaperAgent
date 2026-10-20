@@ -6,7 +6,7 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed record TrayConfig(int SchemaVersion, string PhotoFile, string PhotoSha256,
     string BlackFile, string BlackSha256, string[] AcceptedPaths, bool StartWithWindows = false,
-    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs, bool HasChosenImage = true, RecentImage[]? RecentImages = null);
+    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs, bool HasChosenImage = true, RecentImage[]? RecentImages = null, string Theme = "system");
 
 internal sealed record SelectedImage(string SourcePath, byte[] Bytes, string Extension, string Sha256, string? FriendlyName = null)
 {
@@ -57,6 +57,7 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
             recent.Any(image => image is null || string.IsNullOrWhiteSpace(image.PhotoFile) ||
                 string.IsNullOrWhiteSpace(image.Sha256) || image.Sha256.Length != 64 || !image.Sha256.All(Uri.IsHexDigit))))
             throw new UiMessageException("InvalidSettings");
+        _ = ThemeOptions.Validate(config.Theme);
         _ = PollingOptions.Validate(config.PollIntervalMs);
         return config with { Language = UiText.Normalize(config.Language) };
     }
@@ -94,7 +95,7 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
             Path.GetFullPath(Path.Combine(Root, current.PhotoFile))) && selected.Sha256 == current.PhotoSha256;
         var source = fromSavedPreview ? current.CurrentSourcePath : selected.SourcePath;
         var chosen = new TrayConfig(3, relative, selected.Sha256, current.BlackFile, current.BlackSha256, [],
-            startup, selected.FriendlyName, source, current.Language, current.PollIntervalMs);
+            startup, selected.FriendlyName, source, current.Language, current.PollIntervalMs, Theme: current.Theme);
         return RecentImageHistory.Remember(current, chosen);
     }
     public void Write(byte[] bytes)

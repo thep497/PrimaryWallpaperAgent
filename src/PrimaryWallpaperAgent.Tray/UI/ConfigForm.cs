@@ -3,16 +3,14 @@ namespace PrimaryWallpaperAgent.Tray;
 internal sealed class ConfigForm : Form
 {
     private readonly Icon applicationIcon = AppBranding.CreateApplicationIcon();
-    private readonly PictureBox preview = new() { Name = "WallpaperPreview", Dock = DockStyle.Fill, BackColor = Color.FromArgb(25, 29, 36), SizeMode = PictureBoxSizeMode.Zoom, MinimumSize = new Size(240, 80) };
-    private readonly Label filename = new() { Name = "ImageFilename", AutoSize = false, Height = 30, Dock = DockStyle.Fill, AutoEllipsis = true, TextAlign = ContentAlignment.MiddleLeft };
     private readonly Label feedback = new() { Name = "FeedbackLabel", AutoSize = false, AutoEllipsis = true, Dock = DockStyle.Fill, Padding = new Padding(0, 6, 0, 6) };
     private readonly LinkLabel about = new() { Name = "AboutLink", AutoSize = true, Anchor = AnchorStyles.Right, Margin = new Padding(12, 5, 0, 8) };
     private readonly Label heading = new() { AutoSize = true, Margin = new Padding(0, 0, 0, 8) };
     private readonly Label status = new() { Name = "AgentStatus", AutoSize = false, AutoEllipsis = true, Dock = DockStyle.Fill, ForeColor = Color.FromArgb(50, 85, 120), Margin = new Padding(0, 0, 0, 12) };
     private readonly Label languageLabel = new() { AutoSize = true, Margin = new Padding(0, 7, 10, 0) };
-    private readonly ComboBox languageSelector = new() { Name = "LanguageSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
+    private readonly ComboBox languageSelector = new ThemeComboBox() { Name = "LanguageSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
     private readonly Label pollLabel = new() { AutoSize = true, Margin = new Padding(0, 12, 10, 0) };
-    private readonly ComboBox pollSelector = new() { Name = "PollSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170, Margin = new Padding(3, 8, 3, 3) };
+    private readonly ComboBox pollSelector = new ThemeComboBox() { Name = "PollSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170, Margin = new Padding(3, 8, 3, 3) };
     private readonly CheckBox startup = new() { Name = "StartupCheck", AutoSize = true };
     private readonly Button browse = new() { Name = "BrowseButton", AutoSize = true, Padding = new Padding(8, 4, 8, 4) };
     private readonly Button useCurrent = new() { Name = "UseCurrentButton", AutoSize = true, Padding = new Padding(8, 4, 8, 4) };
@@ -35,6 +33,11 @@ internal sealed class ConfigForm : Form
     private readonly Func<RecentImage[]>? recentImages;
     private readonly Func<RecentImage, SelectedImage>? readRecentImage;
     private readonly RecentImageStrip recent = new();
+    private readonly ThemeManager themes;
+    private readonly bool ownsThemes;
+    private readonly Label themeLabel = new() { AutoSize = true, Margin = new Padding(0, 10, 10, 0) };
+    private readonly ComboBox themeSelector = new ThemeComboBox { Name = "ThemeSelector", DropDownStyle = ComboBoxStyle.DropDownList, Width = 170 };
+    private string committedTheme;
     private SelectedImage selected;
     private string language;
     private string committedLanguage;
@@ -50,12 +53,16 @@ internal sealed class ConfigForm : Form
         Func<string> currentPrimary, Action<ConfigSubmission> apply, Action<string> openLog,
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
         Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null,
-        Func<RecentImage[]>? recentImages = null, Func<RecentImage, SelectedImage>? readRecentImage = null)
+        Func<RecentImage[]>? recentImages = null, Func<RecentImage, SelectedImage>? readRecentImage = null,
+        string theme = "system", ThemeManager? themes = null)
     {
         selected = initial;
+        committedTheme = ThemeOptions.Validate(theme);
+        ownsThemes = themes is null;
+        this.themes = themes ?? new ThemeManager(committedTheme);
         this.recentImages = recentImages;
         this.readRecentImage = readRecentImage;
-        recent.Chosen += entry => RunChange(() => ApplyImage(this.readRecentImage!(entry)), "ImageApplied");
+        recent.Chosen += entry => RunChange(() => ApplyImage(this.readRecentImage?.Invoke(entry) ?? selected), "ImageApplied");
         this.dataRoot = dataRoot;
         this.openAboutTarget = openAboutTarget;
         this.updates = updates;
@@ -75,13 +82,13 @@ internal sealed class ConfigForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScroll = false;
-        ClientSize = new Size(700, 640);
-        MinimumSize = SizeFromClientSize(new Size(620, 620));
+        ClientSize = new Size(700, 600);
+        MinimumSize = SizeFromClientSize(new Size(620, 590));
         var layout = new TableLayoutPanel { Name = "SettingsContent", Dock = DockStyle.Fill,
-            ColumnCount = 1, RowCount = 9, Padding = new Padding(18), Margin = Padding.Empty };
+            ColumnCount = 1, RowCount = 7, Padding = new Padding(16), Margin = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var i = 0; i < 9; i++)
-            layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
+        for (var i = 0; i < 7; i++)
+            layout.RowStyles.Add(new RowStyle(i == 6 ? SizeType.Percent : SizeType.AutoSize, i == 6 ? 100 : 0));
         Controls.Add(layout);
         var header = new TableLayoutPanel { Name = "SettingsHeader", AutoSize = true, Dock = DockStyle.Fill,
             ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
@@ -91,16 +98,13 @@ internal sealed class ConfigForm : Form
         header.Controls.Add(about, 1, 0);
         about.LinkClicked += (_, _) =>
         {
-            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget, this.updates);
+            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget, this.updates, this.themes);
             dialog.ShowDialog(this);
         };
         layout.Controls.Add(header, 0, 0);
         status.Height = Font.Height + 8;
         layout.Controls.Add(status, 0, 1);
-        layout.Controls.Add(preview, 0, 2);
-        filename.Height = Font.Height + 8;
-        layout.Controls.Add(filename, 0, 3);
-        layout.Controls.Add(recent, 0, 4);
+        layout.Controls.Add(recent, 0, 2);
         var rowHeight = Font.Height + 16;
         var choose = new TableLayoutPanel { Name = "ImageActions", AutoSize = true, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 4, 0, 10) };
@@ -116,9 +120,9 @@ internal sealed class ConfigForm : Form
         choose.Controls.Add(browse, 0, 0);
         choose.Controls.Add(useCurrent, 1, 0);
         choose.Controls.Add(CreateHelpButton("ImageHelpButton", "ImageHelpTitle", "ImageHelpText"), 2, 0);
-        layout.Controls.Add(choose, 0, 5);
+        layout.Controls.Add(choose, 0, 3);
         var preferences = new TableLayoutPanel { Name = "Preferences", AutoSize = true, Dock = DockStyle.Fill,
-            ColumnCount = 3, RowCount = 3, Margin = Padding.Empty };
+            ColumnCount = 3, RowCount = 4, Margin = Padding.Empty };
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -128,19 +132,25 @@ internal sealed class ConfigForm : Form
         preferences.Controls.Add(languageLabel, 0, 0);
         preferences.Controls.Add(languageSelector, 1, 0);
         preferences.Controls.Add(CreateHelpButton("LanguageHelpButton", "LanguageLabel", "LanguageHint"), 2, 0);
+        foreach (var mode in ThemeOptions.Supported) themeSelector.Items.Add(new ThemeOption(mode, UiText.T("Theme_" + mode, this.language)));
+        themeSelector.SelectedIndex = Array.IndexOf(ThemeOptions.Supported, committedTheme);
+        themeSelector.SelectedIndexChanged += (_, _) => ChangePreferences();
+        preferences.Controls.Add(themeLabel, 0, 1);
+        preferences.Controls.Add(themeSelector, 1, 1);
+        preferences.Controls.Add(CreateHelpButton("ThemeHelpButton", "ThemeLabel", "ThemeHint"), 2, 1);
         foreach (var interval in PollingOptions.SupportedIntervals)
             pollSelector.Items.Add(new PollOption(interval, PollOptionText(interval)));
         pollSelector.SelectedIndex = Array.IndexOf(PollingOptions.SupportedIntervals.ToArray(), committedPollIntervalMs);
         pollSelector.SelectedIndexChanged += (_, _) => ChangePreferences();
-        preferences.Controls.Add(pollLabel, 0, 1);
-        preferences.Controls.Add(pollSelector, 1, 1);
-        preferences.Controls.Add(CreateHelpButton("PollHelpButton", "PollLabel", "PollHint"), 2, 1);
+        preferences.Controls.Add(pollLabel, 0, 2);
+        preferences.Controls.Add(pollSelector, 1, 2);
+        preferences.Controls.Add(CreateHelpButton("PollHelpButton", "PollLabel", "PollHint"), 2, 2);
         startup.Checked = startupEnabled;
         startup.CheckedChanged += (_, _) => ChangePreferences();
-        preferences.Controls.Add(startup, 0, 2);
+        preferences.Controls.Add(startup, 0, 3);
         preferences.SetColumnSpan(startup, 2);
-        preferences.Controls.Add(CreateHelpButton("StartupHelpButton", "StartupCheck", "StartupHint"), 2, 2);
-        layout.Controls.Add(preferences, 0, 6);
+        preferences.Controls.Add(CreateHelpButton("StartupHelpButton", "StartupCheck", "StartupHint"), 2, 3);
+        layout.Controls.Add(preferences, 0, 4);
         var response = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
             Margin = new Padding(0, 4, 0, 4) };
         response.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -152,8 +162,8 @@ internal sealed class ConfigForm : Form
             lastError is null ? "" : UiText.Error(lastError, this.language, errorFallback));
         response.Controls.Add(feedback, 0, 0);
         response.Controls.Add(errorDetails, 1, 0);
-        layout.Controls.Add(response, 0, 7);
-        var footer = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
+        layout.Controls.Add(response, 0, 5);
+        var footer = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Bottom, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -162,13 +172,14 @@ internal sealed class ConfigForm : Form
         footer.Controls.Add(undo, 0, 0);
         footer.Controls.Add(log, 2, 0);
         footer.Controls.Add(close, 3, 0);
-        layout.Controls.Add(footer, 0, 8);
+        layout.Controls.Add(footer, 0, 6);
         CancelButton = close;
         FormClosing += (_, args) => { if (busy) args.Cancel = true; };
         Load += (_, _) => BeginInvoke((Action)(() => WindowPresentation.Reveal(this)));
         ShowSelected();
         updatingControls = false;
         ApplyTexts();
+        this.themes.Bind(this);
     }
 
     internal SettingsHelpPopup? CurrentHelp => helpPopup;
@@ -187,7 +198,7 @@ internal sealed class ConfigForm : Form
     {
         helpPopup?.Close();
         helpPopup?.Dispose();
-        helpPopup = new SettingsHelpPopup(Font, title, body, UiText.T("Close", language));
+        helpPopup = new SettingsHelpPopup(Font, title, body, UiText.T("Close", language), themes);
         helpPopup.Show(anchor, new Point(0, anchor.Height + 4));
     }
 
@@ -198,13 +209,16 @@ internal sealed class ConfigForm : Form
     {
         if (updatingControls || busy) return;
         var nextLanguage = ((LanguageOption)languageSelector.SelectedItem!).Code;
-        if (nextLanguage == committedLanguage && startup.Checked == committedStartup && PollIntervalMs == committedPollIntervalMs) return;
+        var nextTheme = ((ThemeOption)themeSelector.SelectedItem!).Mode;
+        if (nextLanguage == committedLanguage && startup.Checked == committedStartup && PollIntervalMs == committedPollIntervalMs && nextTheme == committedTheme) return;
         RunChange(() =>
         {
-            apply(new(selected, startup.Checked, nextLanguage, false, PollIntervalMs));
+            apply(new(selected, startup.Checked, nextLanguage, false, PollIntervalMs, nextTheme));
             language = committedLanguage = nextLanguage;
             committedStartup = startup.Checked;
             committedPollIntervalMs = PollIntervalMs;
+            committedTheme = nextTheme;
+            themes.SetMode(committedTheme);
         }, "SettingsSaved");
     }
 
@@ -221,10 +235,10 @@ internal sealed class ConfigForm : Form
         Text = UiText.Title("ConfigTitle", language);
         heading.Text = T("ConfigHeading");
         about.Text = UiText.T("AboutLink", language, AboutForm.VersionText);
-        if (imageConfigured?.Invoke() == false) filename.Text = T("ChooseImageFirst");
         status.Text = statusText(language);
         languageLabel.Text = T("LanguageLabel");
         pollLabel.Text = T("PollLabel");
+        themeLabel.Text = T("ThemeLabel");
         var wasUpdating = updatingControls;
         updatingControls = true;
         try
@@ -236,6 +250,13 @@ internal sealed class ConfigForm : Form
                 pollSelector.Items[i] = option with { Label = PollOptionText(option.IntervalMs) };
             }
             pollSelector.SelectedIndex = index;
+            var themeIndex = themeSelector.SelectedIndex;
+            for (var i = 0; i < themeSelector.Items.Count; i++)
+            {
+                var option = (ThemeOption)themeSelector.Items[i]!;
+                themeSelector.Items[i] = option with { Label = T("Theme_" + option.Mode) };
+            }
+            themeSelector.SelectedIndex = themeIndex;
         }
         finally { updatingControls = wasUpdating; }
         recent.SetLanguage(language);
@@ -251,7 +272,8 @@ internal sealed class ConfigForm : Form
         }
         errorDetails.Visible = lastError is not null;
         errorDetails.AccessibleName = T("ChangeErrorTitle");
-        feedback.ForeColor = lastError is null ? Color.FromArgb(25, 115, 65) : Color.Firebrick;
+        feedback.Tag = lastError is not null;
+        feedback.ForeColor = lastError is null ? themes.Palette.Success : themes.Palette.Error;
         feedback.Text = lastError is not null ? UiText.Error(lastError, language, errorFallback) : feedbackKey is null ? "" : T(feedbackKey);
         UpdateEnabled();
     }
@@ -259,7 +281,7 @@ internal sealed class ConfigForm : Form
     private void UpdateEnabled()
     {
         about.Enabled = recent.Enabled = !busy;
-        languageSelector.Enabled = pollSelector.Enabled = startup.Enabled = browse.Enabled = useCurrent.Enabled = !busy;
+        languageSelector.Enabled = themeSelector.Enabled = pollSelector.Enabled = startup.Enabled = browse.Enabled = useCurrent.Enabled = !busy;
         undo.Enabled = !busy && undoImage is not null && canUndo?.Invoke() == true;
         close.Enabled = !busy;
     }
@@ -284,26 +306,17 @@ internal sealed class ConfigForm : Form
 
     private void ApplyImage(SelectedImage next)
     {
-        Bitmap? nextPreview = next.Preview();
-        try
-        {
-            apply(new(next, committedStartup, language, true, committedPollIntervalMs));
-            selected = next;
-            ShowSelected(nextPreview);
-            nextPreview = null; // PictureBox owns this preview until replaced/disposed.
-        }
-        finally { nextPreview?.Dispose(); }
+        apply(new(next, committedStartup, language, true, committedPollIntervalMs, committedTheme));
+        selected = next;
+        ShowSelected();
     }
 
-    private void ShowSelected(Bitmap? next = null)
+    private void ShowSelected()
     {
-        next ??= selected.Preview();
-        var old = preview.Image;
-        preview.Image = next;
-        old?.Dispose();
-        filename.Text = selected.FriendlyName ?? Path.GetFileName(selected.SourcePath);
-        recent.SetImages(recentImages?.Invoke() ?? [], selected.Sha256, language,
-            readRecentImage ?? (_ => throw new UiMessageException("RecentImageUnavailable")));
+        RecentImage[] entries = imageConfigured?.Invoke() == false ? [] : recentImages?.Invoke() ??
+            [new RecentImage(selected.SourcePath, selected.Sha256, selected.FriendlyName)];
+        recent.SetImages(entries, selected.Sha256, language, readRecentImage ?? (_ => selected));
+        recent.ApplyPalette(themes.Palette);
     }
 
     private void RunChange(Action action, string success, string fallback = "GenericError")
@@ -321,6 +334,7 @@ internal sealed class ConfigForm : Form
                 language = committedLanguage;
                 languageSelector.SelectedIndex = language == "th" ? 0 : 1;
                 pollSelector.SelectedIndex = Array.IndexOf(PollingOptions.SupportedIntervals.ToArray(), committedPollIntervalMs);
+                themeSelector.SelectedIndex = Array.IndexOf(ThemeOptions.Supported, committedTheme);
                 startup.Checked = committedStartup;
             }
             finally { updatingControls = false; }
@@ -332,10 +346,11 @@ internal sealed class ConfigForm : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { helpPopup?.Dispose(); preview.Image?.Dispose(); preview.Image = null; }
+        if (disposing) { helpPopup?.Dispose(); if (ownsThemes) themes.Dispose(); }
         base.Dispose(disposing);
         if (disposing) applicationIcon.Dispose();
     }
+    private sealed record ThemeOption(string Mode, string Label) { public override string ToString() => Label; }
     private sealed record PollOption(int IntervalMs, string Label) { public override string ToString() => Label; }
     private sealed record LanguageOption(string Code, string Label) { public override string ToString() => Label; }
 }

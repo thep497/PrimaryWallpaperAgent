@@ -3,10 +3,14 @@ namespace PrimaryWallpaperAgent.Tray;
 internal sealed class SettingsHelpPopup : ToolStripDropDown
 {
     private readonly Font titleFont;
+    private readonly ThemeManager themes;
+    private readonly bool ownsThemes;
     internal string BodyText { get; }
 
-    internal SettingsHelpPopup(Font font, string title, string text, string closeText)
+    internal SettingsHelpPopup(Font font, string title, string text, string closeText, ThemeManager? themes = null)
     {
+        ownsThemes = themes is null;
+        this.themes = themes ?? new ThemeManager();
         Name = "SettingsHelpPopup";
         Font = font;
         AccessibleName = title;
@@ -40,11 +44,12 @@ internal sealed class SettingsHelpPopup : ToolStripDropDown
         content.SetColumnSpan(body, 2);
         Items.Add(new ToolStripControlHost(content) { AutoSize = true, Margin = Padding.Empty, Padding = Padding.Empty });
         Opened += (_, _) => close.Focus();
+        this.themes.Bind(this);
     }
 
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (disposing) titleFont.Dispose();
+        if (disposing) { titleFont.Dispose(); if (ownsThemes) themes.Dispose(); }
     }
 }
