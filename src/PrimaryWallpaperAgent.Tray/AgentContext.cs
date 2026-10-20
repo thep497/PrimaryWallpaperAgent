@@ -231,7 +231,8 @@ internal sealed class AgentContext : ApplicationContext
                     return image;
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
-            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates);
+            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates,
+            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));

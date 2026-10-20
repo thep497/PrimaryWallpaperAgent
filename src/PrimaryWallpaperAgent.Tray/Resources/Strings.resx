@@ -105,7 +105,7 @@ One static image is shared across virtual desktops. Spotlight is not supported.<
     <value>Wallpaper agent paused</value>
   </data>
   <data name="PausedNewMessage" xml:space="preserve">
-    <value>A different image or mode was found. Open Settings to choose the image and apply it.</value>
+    <value>Windows reports a different picture. Open Settings and choose a recent picture or a new file.</value>
   </data>
   <data name="PausedErrorMessage" xml:space="preserve">
     <value>Open the activity log from the tray menu, then resume when ready.</value>
@@ -174,7 +174,7 @@ One static image is shared across virtual desktops. Spotlight is not supported.<
     <value>Windows did not show Settings. Close and reopen the app.</value>
   </data>
   <data name="PrimaryImageMissing" xml:space="preserve">
-    <value>The primary display has no image file to select.</value>
+    <value>The primary display has no image file. Choose a recent picture or Browse.</value>
   </data>
   <data name="WindowTestStatus" xml:space="preserve">
     <value>Window visibility test</value>
@@ -225,7 +225,9 @@ Choose a JPG, PNG or BMP file (up to 32 MB and 40 million pixels). Choosing a fi
 
 Use primary image adopts what is currently on the primary display. Undo image restores one previous image until the app exits, without undoing other settings.
 
-The image is shared across Virtual Desktops. Spotlight and slideshow are not supported.</value>
+The image is shared across Virtual Desktops. Spotlight and slideshow are not supported.
+
+Recent pictures keeps the last four successful choices, including the current picture, across app restarts. Click a thumbnail to apply its saved copy immediately.</value>
   </data>
   <data name="StartupHint">
     <value>Starts this app after you sign in to Windows, for this user account.
@@ -277,4 +279,12 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="UpdateNotification"><value>Version {0} is available. Open About to update when convenient.</value></data>
   <data name="UpdateTargetChanged"><value>The installed EXE changed during the update. It was not replaced or launched. Open the intended version manually.</value></data>
   <data name="UpdateRestartFailed"><value>The previous EXE was restored but could not be reopened. Open it manually.</value></data>
+  <data name="RecentImages" xml:space="preserve"><value>Recent pictures</value></data>
+  <data name="RecentCurrent" xml:space="preserve"><value>Current</value></data>
+  <data name="RecentImageChoice" xml:space="preserve"><value>Recent picture {0}: {1}</value></data>
+  <data name="RecentImageHint" xml:space="preserve"><value>Click to use this saved copy. The original file is not needed.</value></data>
+  <data name="RecentUnavailable" xml:space="preserve"><value>Unavailable</value></data>
+  <data name="RecentImageUnavailable" xml:space="preserve"><value>This saved picture is missing or changed. Choose another recent picture or Browse.</value></data>
+  <data name="WindowsImageUnavailable" xml:space="preserve"><value>Windows points to a missing image. Choose a recent picture or Browse.</value></data>
+  <data name="ImageFileMissing" xml:space="preserve"><value>The selected image file was not found. Choose a recent picture or Browse.</value></data>
 </root>

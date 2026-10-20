@@ -23,3 +23,4 @@
 - [Single-file release and first-run](RELEASE-TEST.md)
 - [v0.3.1 activation, log retention and About](MAINTENANCE-TEST.md)
 - [v0.4.0 signed Full/Slim updates and process tests](../development/AUTO-UPDATE.md)
+- [v0.4.2 recent pictures and missing-source recovery](RECENT-IMAGES-TEST.md)

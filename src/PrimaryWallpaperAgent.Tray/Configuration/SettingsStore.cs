@@ -6,7 +6,7 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal sealed record TrayConfig(int SchemaVersion, string PhotoFile, string PhotoSha256,
     string BlackFile, string BlackSha256, string[] AcceptedPaths, bool StartWithWindows = false,
-    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs, bool HasChosenImage = true);
+    string? PhotoLabel = null, string? CurrentSourcePath = null, string Language = "th", int PollIntervalMs = PollingOptions.DefaultIntervalMs, bool HasChosenImage = true, RecentImage[]? RecentImages = null);
 
 internal sealed record SelectedImage(string SourcePath, byte[] Bytes, string Extension, string Sha256, string? FriendlyName = null)
 {
@@ -53,6 +53,10 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
         var config = JsonSerializer.Deserialize<TrayConfig>(bytes.AsSpan(offset)) ?? throw new UiMessageException("InvalidSettings");
         if (config.SchemaVersion is not (1 or 2 or 3) || config.AcceptedPaths is null ||
             config.AcceptedPaths.Any(string.IsNullOrWhiteSpace)) throw new UiMessageException("InvalidSettings");
+        if (config.RecentImages is { } recent && (recent.Length > RecentImageHistory.Limit ||
+            recent.Any(image => image is null || string.IsNullOrWhiteSpace(image.PhotoFile) ||
+                string.IsNullOrWhiteSpace(image.Sha256) || image.Sha256.Length != 64 || !image.Sha256.All(Uri.IsHexDigit))))
+            throw new UiMessageException("InvalidSettings");
         _ = PollingOptions.Validate(config.PollIntervalMs);
         return config with { Language = UiText.Normalize(config.Language) };
     }
@@ -89,7 +93,9 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
         var fromSavedPreview = StringComparer.OrdinalIgnoreCase.Equals(selected.SourcePath,
             Path.GetFullPath(Path.Combine(Root, current.PhotoFile))) && selected.Sha256 == current.PhotoSha256;
         var source = fromSavedPreview ? current.CurrentSourcePath : selected.SourcePath;
-        return new(3, relative, selected.Sha256, current.BlackFile, current.BlackSha256, [], startup, selected.FriendlyName, source, current.Language, current.PollIntervalMs);
+        var chosen = new TrayConfig(3, relative, selected.Sha256, current.BlackFile, current.BlackSha256, [],
+            startup, selected.FriendlyName, source, current.Language, current.PollIntervalMs);
+        return RecentImageHistory.Remember(current, chosen);
     }
     public void Write(byte[] bytes)
     {

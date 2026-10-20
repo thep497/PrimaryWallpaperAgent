@@ -32,6 +32,9 @@ internal sealed class ConfigForm : Form
     private readonly Func<SelectedImage>? undoImage;
     private readonly Func<bool>? canUndo;
     private readonly Func<bool>? imageConfigured;
+    private readonly Func<RecentImage[]>? recentImages;
+    private readonly Func<RecentImage, SelectedImage>? readRecentImage;
+    private readonly RecentImageStrip recent = new();
     private SelectedImage selected;
     private string language;
     private string committedLanguage;
@@ -46,9 +49,13 @@ internal sealed class ConfigForm : Form
     internal ConfigForm(SelectedImage initial, bool startupEnabled, Func<string, string> statusText,
         Func<string> currentPrimary, Action<ConfigSubmission> apply, Action<string> openLog,
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
-        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null)
+        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null,
+        Func<RecentImage[]>? recentImages = null, Func<RecentImage, SelectedImage>? readRecentImage = null)
     {
         selected = initial;
+        this.recentImages = recentImages;
+        this.readRecentImage = readRecentImage;
+        recent.Chosen += entry => RunChange(() => ApplyImage(this.readRecentImage!(entry)), "ImageApplied");
         this.dataRoot = dataRoot;
         this.openAboutTarget = openAboutTarget;
         this.updates = updates;
@@ -68,12 +75,12 @@ internal sealed class ConfigForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScroll = false;
-        ClientSize = new Size(700, 580);
-        MinimumSize = SizeFromClientSize(new Size(620, 520));
+        ClientSize = new Size(700, 640);
+        MinimumSize = SizeFromClientSize(new Size(620, 620));
         var layout = new TableLayoutPanel { Name = "SettingsContent", Dock = DockStyle.Fill,
-            ColumnCount = 1, RowCount = 8, Padding = new Padding(18), Margin = Padding.Empty };
+            ColumnCount = 1, RowCount = 9, Padding = new Padding(18), Margin = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < 9; i++)
             layout.RowStyles.Add(new RowStyle(i == 2 ? SizeType.Percent : SizeType.AutoSize, i == 2 ? 100 : 0));
         Controls.Add(layout);
         var header = new TableLayoutPanel { Name = "SettingsHeader", AutoSize = true, Dock = DockStyle.Fill,
@@ -93,6 +100,7 @@ internal sealed class ConfigForm : Form
         layout.Controls.Add(preview, 0, 2);
         filename.Height = Font.Height + 8;
         layout.Controls.Add(filename, 0, 3);
+        layout.Controls.Add(recent, 0, 4);
         var rowHeight = Font.Height + 16;
         var choose = new TableLayoutPanel { Name = "ImageActions", AutoSize = true, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 4, 0, 10) };
@@ -103,12 +111,12 @@ internal sealed class ConfigForm : Form
         browse.Dock = useCurrent.Dock = DockStyle.Fill;
         browse.Height = useCurrent.Height = rowHeight;
         browse.Click += (_, _) => Browse();
-        useCurrent.Click += (_, _) => SelectImage(currentPrimary);
+        useCurrent.Click += (_, _) => SelectImage(currentPrimary, fromWindows: true);
         undo.Click += (_, _) => RunChange(() => { selected = undoImage!(); ShowSelected(); }, "ImageUndone");
         choose.Controls.Add(browse, 0, 0);
         choose.Controls.Add(useCurrent, 1, 0);
         choose.Controls.Add(CreateHelpButton("ImageHelpButton", "ImageHelpTitle", "ImageHelpText"), 2, 0);
-        layout.Controls.Add(choose, 0, 4);
+        layout.Controls.Add(choose, 0, 5);
         var preferences = new TableLayoutPanel { Name = "Preferences", AutoSize = true, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 3, Margin = Padding.Empty };
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -132,7 +140,7 @@ internal sealed class ConfigForm : Form
         preferences.Controls.Add(startup, 0, 2);
         preferences.SetColumnSpan(startup, 2);
         preferences.Controls.Add(CreateHelpButton("StartupHelpButton", "StartupCheck", "StartupHint"), 2, 2);
-        layout.Controls.Add(preferences, 0, 5);
+        layout.Controls.Add(preferences, 0, 6);
         var response = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
             Margin = new Padding(0, 4, 0, 4) };
         response.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -144,7 +152,7 @@ internal sealed class ConfigForm : Form
             lastError is null ? "" : UiText.Error(lastError, this.language, errorFallback));
         response.Controls.Add(feedback, 0, 0);
         response.Controls.Add(errorDetails, 1, 0);
-        layout.Controls.Add(response, 0, 6);
+        layout.Controls.Add(response, 0, 7);
         var footer = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -154,7 +162,7 @@ internal sealed class ConfigForm : Form
         footer.Controls.Add(undo, 0, 0);
         footer.Controls.Add(log, 2, 0);
         footer.Controls.Add(close, 3, 0);
-        layout.Controls.Add(footer, 0, 7);
+        layout.Controls.Add(footer, 0, 8);
         CancelButton = close;
         FormClosing += (_, args) => { if (busy) args.Cancel = true; };
         Load += (_, _) => BeginInvoke((Action)(() => WindowPresentation.Reveal(this)));
@@ -230,6 +238,7 @@ internal sealed class ConfigForm : Form
             pollSelector.SelectedIndex = index;
         }
         finally { updatingControls = wasUpdating; }
+        recent.SetLanguage(language);
         startup.Text = T("StartupCheck");
         browse.Text = T("Browse");
         useCurrent.Text = T("UseCurrent");
@@ -249,7 +258,7 @@ internal sealed class ConfigForm : Form
 
     private void UpdateEnabled()
     {
-        about.Enabled = !busy;
+        about.Enabled = recent.Enabled = !busy;
         languageSelector.Enabled = pollSelector.Enabled = startup.Enabled = browse.Enabled = useCurrent.Enabled = !busy;
         undo.Enabled = !busy && undoImage is not null && canUndo?.Invoke() == true;
         close.Enabled = !busy;
@@ -261,14 +270,21 @@ internal sealed class ConfigForm : Form
         if (picker.ShowDialog(this) == DialogResult.OK) SelectImage(() => picker.FileName);
     }
 
-    private void SelectImage(Func<string> path) => RunChange(() =>
+    private void SelectImage(Func<string> path, bool fromWindows = false) => RunChange(() =>
     {
         var source = path();
         SelectedImage next;
-        Bitmap? nextPreview;
-        try { next = SelectedImage.Read(source); nextPreview = next.Preview(); }
+        try { next = SelectedImage.Read(source); }
+        catch (Exception error) when (error is FileNotFoundException or DirectoryNotFoundException)
+        { throw new UiMessageException(fromWindows ? "WindowsImageUnavailable" : "ImageFileMissing", error); }
         catch (UiMessageException) { throw; }
         catch (Exception error) { throw new UiMessageException("ImageReadFailed", error); }
+        ApplyImage(next);
+    }, "ImageApplied");
+
+    private void ApplyImage(SelectedImage next)
+    {
+        Bitmap? nextPreview = next.Preview();
         try
         {
             apply(new(next, committedStartup, language, true, committedPollIntervalMs));
@@ -277,7 +293,7 @@ internal sealed class ConfigForm : Form
             nextPreview = null; // PictureBox owns this preview until replaced/disposed.
         }
         finally { nextPreview?.Dispose(); }
-    }, "ImageApplied");
+    }
 
     private void ShowSelected(Bitmap? next = null)
     {
@@ -286,6 +302,8 @@ internal sealed class ConfigForm : Form
         preview.Image = next;
         old?.Dispose();
         filename.Text = selected.FriendlyName ?? Path.GetFileName(selected.SourcePath);
+        recent.SetImages(recentImages?.Invoke() ?? [], selected.Sha256, language,
+            readRecentImage ?? (_ => throw new UiMessageException("RecentImageUnavailable")));
     }
 
     private void RunChange(Action action, string success, string fallback = "GenericError")

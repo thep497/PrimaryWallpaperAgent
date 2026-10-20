@@ -105,7 +105,7 @@
     <value>โปรแกรมพักการทำงาน</value>
   </data>
   <data name="PausedNewMessage" xml:space="preserve">
-    <value>พบภาพหรือโหมดใหม่ เปิดตั้งค่าเพื่อเลือกภาพและบันทึกใช้</value>
+    <value>Windows รายงานภาพอื่น เปิดตั้งค่าแล้วเลือกภาพล่าสุดหรือไฟล์ใหม่</value>
   </data>
   <data name="PausedErrorMessage" xml:space="preserve">
     <value>ตรวจบันทึกจากเมนูไอคอน แล้วเลือกทำงานต่อเมื่อพร้อม</value>
@@ -174,7 +174,7 @@
     <value>Windows ยังไม่แสดงหน้าตั้งค่า กรุณาปิดและเปิดโปรแกรมใหม่</value>
   </data>
   <data name="PrimaryImageMissing" xml:space="preserve">
-    <value>จอหลักไม่มีไฟล์ภาพให้เลือก</value>
+    <value>จอหลักไม่มีไฟล์ภาพให้ใช้ เลือกภาพล่าสุดหรือเลือกไฟล์</value>
   </data>
   <data name="WindowTestStatus" xml:space="preserve">
     <value>ทดสอบการแสดงหน้าต่าง</value>
@@ -225,7 +225,9 @@
 
 ใช้ภาพจอหลัก คือรับภาพที่จอหลักใช้อยู่ตอนนี้ ย้อนกลับภาพ คืนภาพก่อนหน้าได้หนึ่งครั้งจนกว่าจะปิดโปรแกรม โดยไม่ย้อนการตั้งค่าอื่น
 
-ใช้ภาพร่วมกันทุก Virtual Desktop ยังไม่รองรับ Spotlight และ Slideshow</value>
+ใช้ภาพร่วมกันทุก Virtual Desktop ยังไม่รองรับ Spotlight และ Slideshow
+
+ภาพล่าสุดเก็บ 4 ภาพที่เลือกสำเร็จ รวมภาพที่ใช้อยู่ และจำข้ามการปิดโปรแกรม กดรูปย่อเพื่อใช้สำเนาที่เก็บไว้ทันที</value>
   </data>
   <data name="StartupHint">
     <value>เปิดโปรแกรมหลังลงชื่อเข้าใช้ Windows สำหรับบัญชีผู้ใช้นี้
@@ -277,4 +279,12 @@
   <data name="UpdateNotification"><value>มีเวอร์ชัน {0} แล้ว เปิดหน้าเกี่ยวกับเพื่ออัปเดตเมื่อสะดวก</value></data>
   <data name="UpdateTargetChanged"><value>ไฟล์ EXE เปลี่ยนระหว่างอัปเดต โปรแกรมไม่ได้แทนที่หรือเปิดไฟล์นั้น กรุณาเปิดรุ่นที่ต้องการด้วยตนเอง</value></data>
   <data name="UpdateRestartFailed"><value>คืน EXE รุ่นเดิมแล้ว แต่เปิดกลับไม่ได้ กรุณาเปิดโปรแกรมด้วยตนเอง</value></data>
+  <data name="RecentImages" xml:space="preserve"><value>ภาพล่าสุด</value></data>
+  <data name="RecentCurrent" xml:space="preserve"><value>ภาพที่ใช้อยู่</value></data>
+  <data name="RecentImageChoice" xml:space="preserve"><value>ภาพล่าสุด {0}: {1}</value></data>
+  <data name="RecentImageHint" xml:space="preserve"><value>กดเพื่อใช้สำเนาภาพที่เก็บไว้ ไม่ต้องใช้ไฟล์ต้นฉบับ</value></data>
+  <data name="RecentUnavailable" xml:space="preserve"><value>ใช้ไม่ได้</value></data>
+  <data name="RecentImageUnavailable" xml:space="preserve"><value>ภาพที่เก็บไว้หายหรือถูกแก้ไข เลือกภาพล่าสุดอื่นหรือเลือกไฟล์</value></data>
+  <data name="WindowsImageUnavailable" xml:space="preserve"><value>ไม่พบไฟล์ภาพที่ Windows อ้างถึง เลือกภาพล่าสุดหรือเลือกไฟล์</value></data>
+  <data name="ImageFileMissing" xml:space="preserve"><value>ไม่พบไฟล์ภาพที่เลือก เลือกภาพล่าสุดหรือเลือกไฟล์ใหม่</value></data>
 </root>

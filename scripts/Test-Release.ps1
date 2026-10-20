@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.4.1')
+param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.4.2')
 . (Join-Path $PSScriptRoot 'Common.ps1')
 $release = Join-Path $script:ProjectRoot "artifacts\releases\v$Version\win-x64"
 $root = Join-Path $script:ProjectRoot ('.local\release-verification-' + [Guid]::NewGuid().ToString('N').Substring(0,8))

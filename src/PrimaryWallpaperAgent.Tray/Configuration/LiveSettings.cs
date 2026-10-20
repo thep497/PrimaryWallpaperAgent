@@ -24,6 +24,12 @@ internal sealed class LiveSettings(SettingsStore store, TrayConfig config, byte[
     }
 
     internal SelectedImage CurrentImage() => ReadImage(Config);
+    internal RecentImage[] RecentImages() => RecentImageHistory.List(Config);
+    internal SelectedImage ReadRecentImage(RecentImage image)
+    {
+        if (!RecentImages().Contains(image)) throw new UiMessageException("RecentImageUnavailable");
+        return RecentImageHistory.Read(store, image);
+    }
 
     internal void Apply(ConfigSubmission request)
     {
@@ -57,6 +63,7 @@ internal sealed class LiveSettings(SettingsStore store, TrayConfig config, byte[
                 PhotoFile = previous.PhotoFile, PhotoSha256 = previous.PhotoSha256, PhotoLabel = previous.PhotoLabel,
                 CurrentSourcePath = previous.SchemaVersion >= 3 ? previous.CurrentSourcePath : null, AcceptedPaths = []
             };
+            candidate = RecentImageHistory.Remember(Config, candidate);
             var image = ReadImage(candidate); // Validate the cached copy before changing Windows.
             Commit(candidate, applyWallpaper: true);
             previousImage = null; // One undo, available across window reopen until app exit.
