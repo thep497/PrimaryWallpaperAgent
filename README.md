@@ -22,6 +22,21 @@ Open the EXE again to show Settings in the existing running instance. The versio
 
 Managed logs/diagnostics are retained for 30 days with a target total limit of 50 MiB; active/locked files are preserved and retried. Text logs rotate at 2 MiB. Cleanup does not touch settings or wallpaper assets.
 
+## Download warning and SHA-256
+
+Current release EXEs are not Authenticode-signed. Edge may show **"isn't commonly downloaded"**, and Windows may show an unknown-publisher warning. Limited reputation does not establish whether a file is safe. Download only from [this repository's Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases); choose **Keep / Keep anyway** only if you trust that source. If the warning explicitly identifies malware or an unsafe file, stop and report the exact message on [Issues](https://github.com/thep497/PrimaryWallpaperAgent/issues). Keep SmartScreen enabled. [Microsoft's explanation](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation).
+
+Before running, download **SHA256SUMS.txt** from the **same release**. Open PowerShell in the download folder and run:
+
+```powershell
+Get-FileHash -LiteralPath .\PrimaryWallpaperAgent-Full-win-x64.exe -Algorithm SHA256
+Get-Content -LiteralPath .\SHA256SUMS.txt
+```
+
+For Slim, replace the EXE name with **PrimaryWallpaperAgent-Slim-win-x64.exe**. Compare the 64-character hash with the line for that exact filename; letter case does not matter. If they differ, do not run the file. A match verifies that the downloaded bytes agree with the published checksum; it is not a malware scan. The signed update manifest used by the app is separate from Windows publisher signing. [Get-FileHash documentation](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/get-filehash).
+
+ภาษาไทย: รุ่นนี้ยังไม่มีลายเซ็นผู้เผยแพร่บน EXE จึงอาจพบคำเตือนจาก Edge/Windows ให้ตรวจแหล่งดาวน์โหลดและ SHA-256 ก่อนเปิดไฟล์ โดยไม่ต้องปิด SmartScreen
+
 ## Automatic updates
 
 About contains automatic checks, optional Preview releases, release notes and Update and restart. Checks are daily after success; downloads/installations require a click. Full stays Full and Slim stays Slim. The signed manifest, hash/size verification, preflight and startup/rollback protocol protect the update transaction.
@@ -35,6 +50,15 @@ New installations create settings, cached images and logs in **%LOCALAPPDATA%\Pr
 Older installations with settings.json beside the EXE continue using that folder. No silent migration or import of private trial assets occurs. Exit keeps the current wallpaper assignments.
 
 One static image is shared across Windows Virtual Desktops. Unknown wallpaper changes pause the agent for explicit adoption through Settings. Changing the image in Windows alone does not automatically adopt it.
+
+## Uninstall
+
+1. Open Settings and turn **Start with Windows** off. If you also want to remove saved data, use **About > Open data folder** to identify the app's current folder before exiting.
+2. Choose **Exit** from the tray menu, then delete the app EXE.
+3. Optionally delete the identified app data folder to remove settings, cached images, logs and update backups. New installations use **%LOCALAPPDATA%\PrimaryWallpaperAgent**. Back up anything you want to retain first. For legacy installations with data beside the EXE, remove only the app's data and keep unrelated files.
+4. Exiting/removing the app leaves current wallpaper assignments in place. Choose your desired background in **Windows Settings > Personalization > Background** afterward.
+
+ภาษาไทย: ปิดเริ่มพร้อม Windows ก่อน แล้วออกจากโปรแกรมและลบ EXE ข้อมูลที่บันทึกไว้จะลบเพิ่มหรือเก็บไว้ก็ได้ ส่วนภาพพื้นหลังให้ตั้งใหม่ผ่าน Windows ตามต้องการ
 
 ## Build and tests
 
