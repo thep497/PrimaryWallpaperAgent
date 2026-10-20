@@ -30,6 +30,7 @@ internal static class Program
                 ["maintenance"] => MaintenanceSelfTests.Run(),
                 ["instance"] => InstanceSelfTests.Run(),
                 ["update"] => UpdateSelfTests.Run(),
+                ["update-path", var checkedPath] => UpdatePaths.IsRedirectingLink(checkedPath) ? 10 : 0,
                 ["verify-release", var releaseFolder] => UpdateSelfTests.VerifyPublishedFiles(releaseFolder),
                 ["check-published"] => UpdateSelfTests.CheckLiveRelease(),
                 ["update-process", var payloadRoot] => UpdateProcessTests.Run(payloadRoot),

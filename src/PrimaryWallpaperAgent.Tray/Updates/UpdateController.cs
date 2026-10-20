@@ -99,6 +99,7 @@ internal sealed class UpdateController : IDisposable
             var target = Environment.ProcessPath ?? throw new IOException("Executable path unavailable.");
             using var parent = Process.GetCurrentProcess();
             var id = Guid.NewGuid().ToString("N");
+            UpdatePaths.CheckStaging(dataRoot, id);
             var operation = Path.Combine(dataRoot, "updates", "staging", id);
             Directory.CreateDirectory(operation);
             var ticket = new UpdateTicket(1, id, dataRoot, target, UpdateTrust.Hash(target), BuildInfo.Version,
@@ -143,8 +144,8 @@ internal sealed class UpdateController : IDisposable
         {
             if (!handedOff && readyFile is not null)
             {
-                try { if (File.Exists(readyFile) && (File.GetAttributes(readyFile) & FileAttributes.ReparsePoint) == 0) File.Delete(readyFile); }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+                try { if (File.Exists(readyFile) && !UpdatePaths.IsRedirectingLink(readyFile)) File.Delete(readyFile); }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException) { }
             }
             IsBusy = false;
             if (!disposed) Changed?.Invoke();
@@ -155,15 +156,17 @@ internal sealed class UpdateController : IDisposable
     {
         try
         {
+            UpdatePaths.CheckUpdateRoot(dataRoot);
             var path = Path.Combine(dataRoot, "updates", "preferences.json");
             if (File.Exists(path) && new FileInfo(path).Length < 65536)
                 return JsonSerializer.Deserialize<UpdatePreferences>(File.ReadAllBytes(path)) ?? new();
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException) { }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidDataException) { }
         return new();
     }
     private void SavePreferences(UpdatePreferences value)
     {
+        UpdatePaths.CheckUpdateRoot(dataRoot);
         var folder = Path.Combine(dataRoot, "updates");
         Directory.CreateDirectory(folder);
         var temporary = Path.Combine(folder, "preferences-" + Guid.NewGuid().ToString("N") + ".tmp");
@@ -179,16 +182,18 @@ internal sealed class UpdateController : IDisposable
     {
         try
         {
+            UpdatePaths.CheckUpdateRoot(dataRoot);
             var folder = Path.Combine(dataRoot, "updates");
             Directory.CreateDirectory(folder);
             LogRetention.AppendBounded(Path.Combine(folder, "update.log"), DateTimeOffset.Now.ToString("O") + " " + error + Environment.NewLine);
         }
-        catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
+        catch (Exception logError) when (logError is IOException or UnauthorizedAccessException or InvalidDataException) { }
     }
     private void ReadPreviousOutcome()
     {
         try
         {
+            UpdatePaths.CheckUpdateRoot(dataRoot);
             var path = Path.Combine(dataRoot, "updates", "last-result.json");
             if (!File.Exists(path) || new FileInfo(path).Length > 65536) return;
             var result = JsonSerializer.Deserialize<UpdateOutcome>(File.ReadAllBytes(path));
@@ -202,21 +207,22 @@ internal sealed class UpdateController : IDisposable
         var staging = Path.Combine(dataRoot, "updates", "staging");
         try
         {
-            if (!Directory.Exists(staging) || (File.GetAttributes(staging) & FileAttributes.ReparsePoint) != 0) return;
+            UpdatePaths.CheckUpdateRoot(dataRoot);
+            if (!Directory.Exists(staging) || UpdatePaths.IsRedirectingLink(staging)) return;
             foreach (var operation in Directory.EnumerateDirectories(staging, "*", SearchOption.TopDirectoryOnly))
             {
                 if (!Guid.TryParseExact(Path.GetFileName(operation), "N", out _) ||
-                    (File.GetAttributes(operation) & FileAttributes.ReparsePoint) != 0 ||
+                    UpdatePaths.IsRedirectingLink(operation) ||
                     Directory.GetLastWriteTimeUtc(operation) > DateTime.UtcNow.AddDays(-1)) continue;
                 foreach (var name in new[] { "candidate.exe", "helper.exe", "ticket.json", "preflight.json", "health.json", "failure.txt", "parent-trace.txt", "helper-trace.txt" })
                 {
                     var path = Path.Combine(operation, name);
-                    if (File.Exists(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0) File.Delete(path);
+                    if (File.Exists(path) && !UpdatePaths.IsRedirectingLink(path)) File.Delete(path);
                 }
                 if (!Directory.EnumerateFileSystemEntries(operation).Any()) Directory.Delete(operation, recursive: false);
             }
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException) { }
     }
     public void Dispose()
     {

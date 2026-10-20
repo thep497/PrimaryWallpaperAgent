@@ -85,7 +85,7 @@ internal static partial class UpdateTrust
     }
     internal static void VerifyFile(string path, UpdateAsset asset)
     {
-        if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 || new FileInfo(path).Length != asset.Size ||
+        if (UpdatePaths.IsRedirectingLink(path) || new FileInfo(path).Length != asset.Size ||
             !Hash(path).Equals(asset.Sha256, StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Downloaded file does not match the signed manifest.");
     }

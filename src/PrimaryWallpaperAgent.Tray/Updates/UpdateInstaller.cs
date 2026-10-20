@@ -34,6 +34,7 @@ internal static class UpdateInstaller
             !UpdateTrust.SamePath(path, ticket.TicketFile) || IsLink(ticket.OperationRoot) ||
             !ticket.TargetPath.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Invalid update paths.");
+        UpdatePaths.CheckStaging(ticket.DataRoot, ticket.Id);
         _ = UpdateTrust.ParseVersion(ticket.OriginalVersion);
         _ = UpdateTrust.FileName(ticket.Flavor);
         return ticket;
@@ -309,5 +310,5 @@ internal static class UpdateInstaller
     private static void Trace(UpdateTicket ticket, string side, string message) =>
         File.AppendAllText(Path.Combine(ticket.OperationRoot, side + "-trace.txt"), message + Environment.NewLine);
 
-    private static bool IsLink(string path) => (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+    private static bool IsLink(string path) => UpdatePaths.IsRedirectingLink(path);
 }

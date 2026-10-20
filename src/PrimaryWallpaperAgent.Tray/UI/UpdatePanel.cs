@@ -49,7 +49,7 @@ internal sealed class UpdatePanel : UserControl
     {
         if (updating) return;
         try { controller.ChangePreferences(automatic.Checked, preview.Checked); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             RefreshState();
             MessageBox.Show(this, UiText.T("UpdatePreferencesFailed", language), UiText.T("AboutTitle", language), MessageBoxButtons.OK, MessageBoxIcon.Warning);

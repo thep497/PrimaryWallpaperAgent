@@ -43,7 +43,7 @@ Update manifest signing is distinct from Authenticode EXE signing. No Authentico
 8. Start the new EXE with a validated post-update ticket. It loads existing configuration, creates the agent/UI loop, preserves pause and reports a nonce/PID/version/flavor health acknowledgment on the first idle event.
 9. If startup fails, stop only that new child, restore the original and attempt to reopen it. Unexpected externally changed target files are neither replaced nor launched.
 
-No recursive delete is used. Staging cleanup removes only known direct files in recognized operation directories older than a day, skipping reparse directories/files. One previous successful EXE backup is retained; the preceding owned backup is removed only after another healthy update. Locked files can remain for later cleanup. Logs are bounded separately.
+No recursive delete is used. Staging cleanup removes only known direct files in recognized operation directories older than a day, skipping redirecting links (junctions/symlinks). One previous successful EXE backup is retained; the preceding owned backup is removed only after another healthy update. Locked files can remain for later cleanup. Logs are bounded separately.
 
 The running guard continues during network checks/download/preflight. It stops briefly during process handoff; existing wallpaper assignments remain, while topology following resumes with the new process.
 
@@ -64,3 +64,5 @@ These tests do not establish clean Windows VM dependency coverage, Windows 10 co
 - [GitHub Releases API](https://docs.github.com/en/rest/releases/releases)
 - [Microsoft single-file deployment](https://learn.microsoft.com/en-us/dotnet/core/deploying/single-file/overview)
 - [Microsoft ECDSA verification](https://learn.microsoft.com/en-us/dotnet/api/system.security.cryptography.ecdsa.verifydata?view=net-10.0)
+
+v0.4.1 distinguishes actual links via FileSystemInfo.LinkTarget from non-link cloud-sync reparse metadata. This was checked on an existing synced directory (ReparsePoint, no link target) and a real test junction (rejected). Log-retention classification is unchanged.

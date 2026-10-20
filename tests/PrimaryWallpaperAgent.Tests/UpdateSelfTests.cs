@@ -23,7 +23,7 @@ internal static class UpdateSelfTests
         using var client = UpdateFeed.CreateClient();
         var release = new UpdateFeed(client).FindAsync("0.3.1", true, BuildInfo.PublicKey, CancellationToken.None).GetAwaiter().GetResult()
             ?? throw new InvalidOperationException("Published updater release not found.");
-        if (release.Version != "0.4.0") throw new InvalidOperationException("Unexpected release selected.");
+        if (release.Version != BuildInfo.Version) throw new InvalidOperationException("Unexpected release selected.");
         Console.WriteLine("LIVE GITHUB FEED VERIFIED: " + release.Version + "; Full/Slim signature verified.");
         return 0;
     }

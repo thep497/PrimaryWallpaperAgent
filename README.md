@@ -6,7 +6,7 @@ A Windows 11 tray app that keeps a picture on the current Windows primary displa
 
 ## Download and first launch
 
-Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.4.0 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
+Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.4.1 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
 
 1. Keep the EXE in a permanent local folder. Exit any older running instance before launching it.
 2. Set Windows background to **Picture** and fit to **Fill**. Spotlight/slideshow are not supported.
@@ -18,7 +18,7 @@ Settings has no scroll area; click **?** for explanations. **Undo image** restor
 
 Start with Windows uses a per-user Run registry entry and the actual EXE path. Copying the EXE to another PC does not enable startup there. If moved/renamed after opting in, toggle this option off/on from its new location. See [deployment details](docs/development/DEPLOYMENT.md).
 
-Open the EXE again to show Settings in the existing v0.4.0 instance. The version/About link opens version information, GitHub Releases and the current data folder. Exit older versions once before the first v0.4.0 launch.
+Open the EXE again to show Settings in the existing running instance. The version/About link opens version information, GitHub Releases and the current data folder. Exit older versions once before launching this release for the first time.
 
 Managed logs/diagnostics are retained for 30 days with a target total limit of 50 MiB; active/locked files are preserved and retried. Text logs rotate at 2 MiB. Cleanup does not touch settings or wallpaper assets.
 
@@ -54,7 +54,7 @@ Build and verify a distributable EXE:
 .\scripts\Test-Release.ps1
 ```
 
-Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.4.0/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. No third-party app packages, global NuGet source changes or PATH changes are required. The script refuses to overwrite an existing release destination.
+Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.4.1/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. No third-party app packages, global NuGet source changes or PATH changes are required. The script refuses to overwrite an existing release destination.
 
 Publish-Tray.ps1 and Start-WallpaperTray.ps1 remain legacy helpers for the private trial package, rather than public installation steps.
 
@@ -83,7 +83,7 @@ Private settings, photos, monitor snapshots and trial plans are excluded from so
 
 The user previously verified primary switching, hotplug 3→1→3 and policy persistence across Virtual Desktops. On 20 October the user reported normal launch and expected wallpaper behavior. Detailed scenario results are still being collected. Physical-console mapping/recovery, projector, more than three physical displays, DPI transitions and startup after logon still need validation. Tests with 1/3/5 simulated displays do not establish hardware results.
 
-- [v0.4.0 release notes](docs/releases/v0.4.0.md)
+- [v0.4.1 release notes](docs/releases/v0.4.1.md)
 - [Deployment and startup](docs/development/DEPLOYMENT.md)
 - [Updates and distribution variants](docs/development/AUTO-UPDATE.md)
 - [v0.3.1 activation / retention / About](docs/testing/MAINTENANCE-TEST.md)
