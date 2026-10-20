@@ -7,6 +7,9 @@ internal sealed class AgentContext : ApplicationContext
 {
     private readonly SettingsStore store;
     private readonly LiveSettings liveSettings;
+    private readonly UpdateController updates;
+    private readonly System.Windows.Forms.Timer updateTimer = new() { Interval = 60000 };
+    private bool exitForUpdate;
     private TrayConfig config => liveSettings.Config;
     private PolicyImages images => liveSettings.Images;
     private readonly IStartupRegistration startup;
@@ -56,6 +59,9 @@ internal sealed class AgentContext : ApplicationContext
         Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v" + AboutForm.VersionText + "; two stable samples; startup writes only on explicit setting changes");
         Log("UI_LANGUAGE_LOADED language=" + config.Language);
         Log("POLL_INTERVAL_LOADED milliseconds=" + timer.Interval);
+        updates = new UpdateController(store.Root, () => paused);
+        updates.RestartRequested += () => { exitForUpdate = true; RequestUpdateExit(); };
+
         menu.Items.Add(status);
         menu.Items.Add(new ToolStripSeparator());
         settingsItem.Click += (_, _) => ShowConfig();
@@ -68,16 +74,20 @@ internal sealed class AgentContext : ApplicationContext
         exitItem.Click += (_, _) => { if (!liveSettings.IsApplying) ExitThread(); };
         menu.Items.Add(exitItem);
         icon = new NotifyIcon { Icon = trayIcons.Running, ContextMenuStrip = menu, Visible = true };
+        updates.NewVersion += version => icon.ShowBalloonTip(8000, UiText.AppName,
+            UiText.T("UpdateNotification", config.Language, version), ToolTipIcon.Info);
         icon.DoubleClick += (_, _) => ShowConfig();
         icon.BalloonTipClicked += (_, _) => ShowConfig();
         RenderChrome();
         timer.Tick += (_, _) => Tick();
         timer.Start();
+        if (!smoke) { updateTimer.Tick += async (_, _) => await updates.AutoTickAsync(); updateTimer.Start(); }
     }
 
     private void Tick()
     {
         TrimLogs();
+        if (exitForUpdate && !liveSettings.IsApplying) { RequestUpdateExit(); return; }
         if (smoke && uptime.Elapsed.TotalMilliseconds >= PollingOptions.SmokeDurationMs(config.PollIntervalMs)) { ExitThread(); return; }
         if (liveSettings.IsApplying) return;
         if (openOnFirstTick) { openOnFirstTick = false; ShowConfig(); return; }
@@ -159,6 +169,20 @@ internal sealed class AgentContext : ApplicationContext
             UiText.T(requireConfig ? "PausedNewMessage" : "PausedErrorMessage", config.Language), ToolTipIcon.Warning);
     }
 
+    internal void SetInitialPause(bool value)
+    {
+        if (value) { paused = true; SetStatus("StatusPaused"); }
+    }
+    private void RequestUpdateExit()
+    {
+        if (liveSettings.IsApplying) return;
+        if (configForm is { } form)
+        {
+            foreach (var child in form.OwnedForms) child.Close();
+            form.Close();
+        }
+        ExitThread();
+    }
     internal void RequestSettings()
     {
         if (smoke) return;
@@ -207,7 +231,7 @@ internal sealed class AgentContext : ApplicationContext
                     return image;
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
-            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root);
+            }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
@@ -299,6 +323,7 @@ internal sealed class AgentContext : ApplicationContext
     protected override void ExitThreadCore()
     {
         timer.Stop();
+        updateTimer.Stop();
         icon.Visible = false;
         try
         {
@@ -310,7 +335,7 @@ internal sealed class AgentContext : ApplicationContext
     }
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
+        if (disposing) { updates.Dispose(); updateTimer.Dispose(); timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
         base.Dispose(disposing);
     }
 }

@@ -254,4 +254,27 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="GitHubReleases"><value>GitHub Releases</value></data>
   <data name="OpenDataFolder"><value>Open data folder</value></data>
   <data name="OpenLocationFailed"><value>Unable to open this location. Check the browser or folder and try again.</value></data>
+  <data name="UpdateNotChecked"><value>Updates have not been checked yet.</value></data>
+  <data name="UpdateChecking"><value>Checking GitHub Releases…</value></data>
+  <data name="UpdateAvailable"><value>Version {0} is available.</value></data>
+  <data name="UpdateCurrent"><value>You are using the latest version in this channel.</value></data>
+  <data name="UpdateCheckFailed"><value>Could not check for updates. Try again later; wallpaper checking continues.</value></data>
+  <data name="UpdateDownloading"><value>Downloading update… {0}%</value></data>
+  <data name="UpdateVerifying"><value>Verifying the new version…</value></data>
+  <data name="UpdateRestarting"><value>Opening the new version…</value></data>
+  <data name="UpdateRuntimeRequired"><value>The new Slim package could not start. Check that a compatible .NET 10 Desktop Runtime x64 is installed. Your current version is unchanged.</value></data>
+  <data name="UpdatePreflightFailed"><value>The new version could not start. The current version is unchanged.</value></data>
+  <data name="UpdateInstallFailed"><value>The update could not be prepared. Keep using this version or download it from GitHub Releases.</value></data>
+  <data name="UpdateSucceeded"><value>Updated successfully to {0}.</value></data>
+  <data name="UpdateRolledBack"><value>The update failed. The previous version was restored.</value></data>
+  <data name="UpdateRollbackFailed"><value>The update failed and automatic recovery was incomplete. The previous EXE backup is beside the program. Check the update log before reopening.</value></data>
+  <data name="UpdateAutoCheck"><value>Check for updates automatically</value></data>
+  <data name="UpdateIncludePreview"><value>Include preview releases</value></data>
+  <data name="UpdateCheckNow"><value>Check for updates</value></data>
+  <data name="UpdateInstall"><value>Update and restart</value></data>
+  <data name="UpdateNotes"><value>View release notes</value></data>
+  <data name="UpdatePreferencesFailed"><value>Could not save update preferences.</value></data>
+  <data name="UpdateNotification"><value>Version {0} is available. Open About to update when convenient.</value></data>
+  <data name="UpdateTargetChanged"><value>The installed EXE changed during the update. It was not replaced or launched. Open the intended version manually.</value></data>
+  <data name="UpdateRestartFailed"><value>The previous EXE was restored but could not be reopened. Open it manually.</value></data>
 </root>

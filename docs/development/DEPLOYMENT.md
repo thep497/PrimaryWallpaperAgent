@@ -2,9 +2,9 @@
 
 ## Single-file preview
 
-Publish-Release.ps1 creates a self-contained win-x64 .NET 10 build with PublishSingleFile and IncludeNativeLibrariesForSelfExtract enabled, trimming disabled, and debug symbols excluded. The app, runtime, Thai resources and icons are bundled into one EXE.
+Publish-Release.ps1 creates Full (self-contained) and Slim (framework-dependent) win-x64 .NET 10 builds with PublishSingleFile and IncludeNativeLibrariesForSelfExtract enabled, trimming disabled, and debug symbols excluded. Both variants bundle app resources into one EXE. Full includes the runtime; Slim uses an installed compatible .NET 10 Windows Desktop Runtime x64.
 
-Release assets contain only PrimaryWallpaperAgent.exe and SHA256SUMS.txt, with no developer settings/photos/snapshots/trial plans. The build is unsigned.
+Release assets contain Full/Slim EXEs, update-manifest.json, update-manifest.sig and SHA256SUMS.txt, with no developer settings/photos/snapshots/trial plans. The manifest is ECDSA-signed; EXEs remain unsigned by Authenticode.
 
 Single-file describes the download; the app creates user data on disk. Microsoft native runtime libraries can extract to the normal per-user temporary bundle cache. Test-Release.ps1 redirects that cache into the ignored project folder.
 
@@ -54,3 +54,9 @@ The Settings header version link opens About with the actual version/data locati
 
 - [Microsoft: PipeOptions.CurrentUserOnly](https://learn.microsoft.com/en-us/dotnet/api/system.io.pipes.pipeoptions?view=net-10.0)
 - [Microsoft: foreground activation permission](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-allowsetforegroundwindow)
+
+## v0.4.0 updates
+
+Public release output now includes separate Full/Slim single-file EXEs and an ECDSA-signed manifest. Full includes the runtime; Slim requires an installed compatible .NET 10 Windows Desktop Runtime x64. Updates preserve flavor and the existing EXE path; downloads/installations require a user click. See [auto-update design and evidence](AUTO-UPDATE.md).
+
+Versions before v0.4.0 need one manual upgrade. Update signing uses the ignored DPAPI-protected key and the committed public verification key. EXEs remain unsigned by Authenticode.

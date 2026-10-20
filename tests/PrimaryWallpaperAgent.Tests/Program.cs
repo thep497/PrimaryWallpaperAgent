@@ -15,6 +15,7 @@ internal static class Program
         Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
         try
         {
+            if (args is ["update-fixture"] or ["--apply-update", _] or ["--post-update", _] or ["--update-preflight", _] or ["--config"]) return UpdateProcessTests.Fixture(args);
             return args switch
             {
                 ["policy"] => TrialSelfTests.Run(),
@@ -28,6 +29,10 @@ internal static class Program
                 ["release"] => ReleaseSelfTests.Run(),
                 ["maintenance"] => MaintenanceSelfTests.Run(),
                 ["instance"] => InstanceSelfTests.Run(),
+                ["update"] => UpdateSelfTests.Run(),
+                ["verify-release", var releaseFolder] => UpdateSelfTests.VerifyPublishedFiles(releaseFolder),
+                ["check-published"] => UpdateSelfTests.CheckLiveRelease(),
+                ["update-process", var payloadRoot] => UpdateProcessTests.Run(payloadRoot),
                 ["instance-client", var channel, var command] => InstanceSelfTests.Client(channel, command),
                 ["retention-link", var root] => MaintenanceSelfTests.CheckJunction(root),
                 _ => Usage()

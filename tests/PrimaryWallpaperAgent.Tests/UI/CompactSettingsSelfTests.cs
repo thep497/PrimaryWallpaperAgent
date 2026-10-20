@@ -39,7 +39,7 @@ internal static class CompactSettingsSelfTests
                 ("PollHelpButton", "PollHint"),
                 ("StartupHelpButton", "StartupHint") })
             {
-                Find<Button>(form, topic.Item1).PerformClick(); Application.DoEvents();
+                Find<Button>(form, topic.Item1).PerformClick();
                 var popup = form.CurrentHelp ?? throw new InvalidOperationException("Help popup missing");
                 Assert(popup.Visible && popup.BodyText == UiText.T(topic.Item2, language), "Click reveals localized help");
                 Assert(!string.IsNullOrWhiteSpace(Find<Button>(popup, "HelpCloseButton").AccessibleName), "Help close is accessible");
@@ -47,6 +47,7 @@ internal static class CompactSettingsSelfTests
                     Capture(popup, Path.Combine(folder, "help-" + language + ".png"));
                 Find<Button>(popup, "HelpCloseButton").PerformClick();
                 Assert(!popup.Visible, "Help dismisses with its close button");
+                Application.DoEvents();
             }
             Assert(changes == 0, "Help never changes settings/startup/wallpaper");
             if (size.Width == 700) Capture(form, Path.Combine(folder, "config-" + language + ".png"));

@@ -25,6 +25,7 @@ internal sealed class ConfigForm : Form
     private SettingsHelpPopup? helpPopup;
     private readonly string dataRoot;
     private readonly Action<string>? openAboutTarget;
+    private readonly UpdateController? updates;
     private readonly Func<string, string> statusText;
     private readonly Action<ConfigSubmission> apply;
     private readonly Action<Exception>? reportError;
@@ -45,11 +46,12 @@ internal sealed class ConfigForm : Form
     internal ConfigForm(SelectedImage initial, bool startupEnabled, Func<string, string> statusText,
         Func<string> currentPrimary, Action<ConfigSubmission> apply, Action<string> openLog,
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
-        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null)
+        Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null)
     {
         selected = initial;
         this.dataRoot = dataRoot;
         this.openAboutTarget = openAboutTarget;
+        this.updates = updates;
         this.currentPrimary = currentPrimary;
         this.statusText = statusText;
         this.apply = apply;
@@ -82,7 +84,7 @@ internal sealed class ConfigForm : Form
         header.Controls.Add(about, 1, 0);
         about.LinkClicked += (_, _) =>
         {
-            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget);
+            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget, this.updates);
             dialog.ShowDialog(this);
         };
         layout.Controls.Add(header, 0, 0);
@@ -247,6 +249,7 @@ internal sealed class ConfigForm : Form
 
     private void UpdateEnabled()
     {
+        about.Enabled = !busy;
         languageSelector.Enabled = pollSelector.Enabled = startup.Enabled = browse.Enabled = useCurrent.Enabled = !busy;
         undo.Enabled = !busy && undoImage is not null && canUndo?.Invoke() == true;
         close.Enabled = !busy;

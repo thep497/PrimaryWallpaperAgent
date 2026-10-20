@@ -10,7 +10,7 @@ internal sealed class AboutForm : Form
     private readonly Font headingFont;
     private readonly Icon applicationIcon = AppBranding.CreateApplicationIcon();
 
-    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null)
+    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null, UpdateController? updates = null)
     {
         string T(string key) => UiText.T(key, language);
         Name = "AboutForm";
@@ -30,7 +30,7 @@ internal sealed class AboutForm : Form
         headingFont = new Font(Font.FontFamily, 15, FontStyle.Bold);
         var title = new Label { AutoSize = true, Text = UiText.AppName, Font = headingFont, Margin = new Padding(0, 0, 0, 6) };
         layout.Controls.Add(title);
-        layout.Controls.Add(new Label { Name = "AboutVersion", AutoSize = true, Text = T("VersionLabel") + " " + VersionText, Margin = new Padding(0, 0, 0, 14) });
+        layout.Controls.Add(new Label { Name = "AboutVersion", AutoSize = true, Text = T("VersionLabel") + " " + VersionText + " · " + (BuildInfo.Flavor == "full" ? "Full" : "Slim"), Margin = new Padding(0, 0, 0, 14) });
         layout.Controls.Add(new Label { AutoSize = true, MaximumSize = new Size(450, 0), Text = T("AboutDescription"), Margin = new Padding(0, 0, 0, 14) });
         layout.Controls.Add(new Label { AutoSize = true, Text = T("DataFolderLabel"), Margin = new Padding(0, 0, 0, 4) });
         layout.Controls.Add(new TextBox { Name = "AboutDataPath", ReadOnly = true, Text = dataRoot, Width = 450,
@@ -42,6 +42,7 @@ internal sealed class AboutForm : Form
         releases.Click += (_, _) => Open(ReleasesUrl);
         data.Click += (_, _) => Open(dataRoot);
         actions.Controls.AddRange([releases, data, close]);
+        if (updates is not null) layout.Controls.Add(new UpdatePanel(updates, language, Open));
         layout.Controls.Add(actions);
         CancelButton = close;
         AcceptButton = close;

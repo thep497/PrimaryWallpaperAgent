@@ -22,3 +22,4 @@
 - [Compact Settings and click hints](COMPACT-SETTINGS-TEST.md)
 - [Single-file release and first-run](RELEASE-TEST.md)
 - [v0.3.1 activation, log retention and About](MAINTENANCE-TEST.md)
+- [v0.4.0 signed Full/Slim updates and process tests](../development/AUTO-UPDATE.md)

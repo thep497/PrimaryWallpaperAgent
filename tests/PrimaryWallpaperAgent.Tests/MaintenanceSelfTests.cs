@@ -96,7 +96,7 @@ internal static class MaintenanceSelfTests
                 try
                 {
                     Assert(dialog.Text == UiText.Title("AboutTitle", language), "Localized About title");
-                    Assert(Find<Label>(dialog, "AboutVersion").Text.EndsWith(AboutForm.VersionText), "Actual assembly version");
+                    Assert(Find<Label>(dialog, "AboutVersion").Text.Contains(AboutForm.VersionText), "Actual assembly version");
                     Assert(Find<TextBox>(dialog, "AboutDataPath").Text == folder, "Shows the actual data folder");
                     Find<Button>(dialog, "ReleasesButton").PerformClick();
                     Find<Button>(dialog, "OpenDataButton").PerformClick();

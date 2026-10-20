@@ -254,4 +254,27 @@
   <data name="GitHubReleases"><value>GitHub Releases</value></data>
   <data name="OpenDataFolder"><value>เปิดโฟลเดอร์ข้อมูล</value></data>
   <data name="OpenLocationFailed"><value>เปิดตำแหน่งนี้ไม่ได้ กรุณาตรวจสอบเบราว์เซอร์หรือโฟลเดอร์แล้วลองใหม่</value></data>
+  <data name="UpdateNotChecked"><value>ยังไม่ได้ตรวจสอบรุ่นใหม่</value></data>
+  <data name="UpdateChecking"><value>กำลังตรวจสอบ GitHub Releases…</value></data>
+  <data name="UpdateAvailable"><value>มีเวอร์ชัน {0} พร้อมให้อัปเดต</value></data>
+  <data name="UpdateCurrent"><value>กำลังใช้รุ่นล่าสุดในช่องทางที่เลือก</value></data>
+  <data name="UpdateCheckFailed"><value>ตรวจรุ่นใหม่ไม่ได้ ลองภายหลังได้ โปรแกรมยังจัด wallpaper ต่อ</value></data>
+  <data name="UpdateDownloading"><value>กำลังดาวน์โหลดอัปเดต… {0}%</value></data>
+  <data name="UpdateVerifying"><value>กำลังตรวจสอบไฟล์และการเปิดรุ่นใหม่…</value></data>
+  <data name="UpdateRestarting"><value>กำลังเปิดโปรแกรมรุ่นใหม่…</value></data>
+  <data name="UpdateRuntimeRequired"><value>Slim รุ่นใหม่เปิดไม่ได้ กรุณาตรวจสอบ .NET 10 Desktop Runtime x64 ที่เข้ากันได้ รุ่นปัจจุบันยังคงเดิม</value></data>
+  <data name="UpdatePreflightFailed"><value>รุ่นใหม่เปิดไม่ได้ โปรแกรมรุ่นปัจจุบันยังคงเดิม</value></data>
+  <data name="UpdateInstallFailed"><value>เตรียมอัปเดตไม่สำเร็จ ใช้รุ่นนี้ต่อหรือดาวน์โหลดจาก GitHub Releases ได้</value></data>
+  <data name="UpdateSucceeded"><value>อัปเดตเป็น {0} สำเร็จแล้ว</value></data>
+  <data name="UpdateRolledBack"><value>อัปเดตไม่สำเร็จ คืนโปรแกรมรุ่นเดิมแล้ว</value></data>
+  <data name="UpdateRollbackFailed"><value>อัปเดตไม่สำเร็จและกู้คืนอัตโนมัติไม่ครบ สำเนา EXE เดิมอยู่ข้างโปรแกรม กรุณาตรวจ update log ก่อนเปิดใหม่</value></data>
+  <data name="UpdateAutoCheck"><value>ตรวจสอบรุ่นใหม่อัตโนมัติ</value></data>
+  <data name="UpdateIncludePreview"><value>รับการแจ้งเตือนรุ่น Preview ด้วย</value></data>
+  <data name="UpdateCheckNow"><value>ตรวจสอบรุ่นใหม่</value></data>
+  <data name="UpdateInstall"><value>อัปเดตและเปิดใหม่</value></data>
+  <data name="UpdateNotes"><value>ดูรายการเปลี่ยนแปลง</value></data>
+  <data name="UpdatePreferencesFailed"><value>บันทึกการตั้งค่าอัปเดตไม่สำเร็จ</value></data>
+  <data name="UpdateNotification"><value>มีเวอร์ชัน {0} แล้ว เปิดหน้าเกี่ยวกับเพื่ออัปเดตเมื่อสะดวก</value></data>
+  <data name="UpdateTargetChanged"><value>ไฟล์ EXE เปลี่ยนระหว่างอัปเดต โปรแกรมไม่ได้แทนที่หรือเปิดไฟล์นั้น กรุณาเปิดรุ่นที่ต้องการด้วยตนเอง</value></data>
+  <data name="UpdateRestartFailed"><value>คืน EXE รุ่นเดิมแล้ว แต่เปิดกลับไม่ได้ กรุณาเปิดโปรแกรมด้วยตนเอง</value></data>
 </root>
