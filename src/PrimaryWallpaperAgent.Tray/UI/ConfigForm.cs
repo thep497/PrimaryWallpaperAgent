@@ -33,6 +33,8 @@ internal sealed class ConfigForm : Form
     private readonly Func<RecentImage[]>? recentImages;
     private readonly Func<RecentImage, SelectedImage>? readRecentImage;
     private readonly RecentImageStrip recent = new();
+    private readonly SettingsSizing sizing;
+    private readonly Action<string>? reportLayout;
     private readonly ThemeManager themes;
     private readonly bool ownsThemes;
     private readonly Label themeLabel = new() { AutoSize = true, Margin = new Padding(0, 10, 10, 0) };
@@ -54,9 +56,11 @@ internal sealed class ConfigForm : Form
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
         Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null,
         Func<RecentImage[]>? recentImages = null, Func<RecentImage, SelectedImage>? readRecentImage = null,
-        string theme = "system", ThemeManager? themes = null)
+        string theme = "system", ThemeManager? themes = null, Action<string>? reportLayout = null, Func<Rectangle>? workingArea = null)
     {
+        SuspendLayout();
         selected = initial;
+        this.reportLayout = reportLayout;
         committedTheme = ThemeOptions.Validate(theme);
         ownsThemes = themes is null;
         this.themes = themes ?? new ThemeManager(committedTheme);
@@ -79,18 +83,23 @@ internal sealed class ConfigForm : Form
         Icon = applicationIcon;
         Font = new Font("Segoe UI", 10);
         heading.Font = new Font(Font.FontFamily, 16, FontStyle.Bold);
+        AutoScaleDimensions = new SizeF(96, 96);
         AutoScaleMode = AutoScaleMode.Dpi;
         StartPosition = FormStartPosition.CenterScreen;
         AutoScroll = false;
         ClientSize = new Size(700, 600);
-        MinimumSize = SizeFromClientSize(new Size(620, 590));
-        var layout = new TableLayoutPanel { Name = "SettingsContent", Dock = DockStyle.Fill,
-            ColumnCount = 1, RowCount = 7, Padding = new Padding(16), Margin = Padding.Empty };
+        MinimumSize = SizeFromClientSize(new Size(600, 320));
+        var frame = new TableLayoutPanel { Name = "SettingsFrame", Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+        frame.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        frame.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        frame.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var viewport = new Panel { Name = "SettingsViewport", Dock = DockStyle.Fill, Margin = Padding.Empty };
+        var layout = new TableLayoutPanel { Name = "SettingsContent", Dock = DockStyle.Top, AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 6, Padding = new Padding(16, 16, 16, 0), Margin = Padding.Empty };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (var i = 0; i < 7; i++)
-            layout.RowStyles.Add(new RowStyle(i == 6 ? SizeType.Percent : SizeType.AutoSize, i == 6 ? 100 : 0));
-        Controls.Add(layout);
-        var header = new TableLayoutPanel { Name = "SettingsHeader", AutoSize = true, Dock = DockStyle.Fill,
+        for (var i = 0; i < 6; i++) layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        viewport.Controls.Add(layout); frame.Controls.Add(viewport, 0, 0); Controls.Add(frame);
+        var header = new TableLayoutPanel { Name = "SettingsHeader", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill,
             ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -98,7 +107,7 @@ internal sealed class ConfigForm : Form
         header.Controls.Add(about, 1, 0);
         about.LinkClicked += (_, _) =>
         {
-            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget, this.updates, this.themes);
+            using var dialog = new AboutForm(this.language, this.dataRoot, this.openAboutTarget, this.updates, this.themes, reportLayout: this.reportLayout);
             dialog.ShowDialog(this);
         };
         layout.Controls.Add(header, 0, 0);
@@ -106,14 +115,14 @@ internal sealed class ConfigForm : Form
         layout.Controls.Add(status, 0, 1);
         layout.Controls.Add(recent, 0, 2);
         var rowHeight = Font.Height + 16;
-        var choose = new TableLayoutPanel { Name = "ImageActions", AutoSize = true, Dock = DockStyle.Fill,
+        var choose = new TableLayoutPanel { Name = "ImageActions", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 4, 0, 10) };
         choose.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         choose.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
         choose.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        browse.AutoSize = useCurrent.AutoSize = false;
+        browse.AutoSize = useCurrent.AutoSize = true;
         browse.Dock = useCurrent.Dock = DockStyle.Fill;
-        browse.Height = useCurrent.Height = rowHeight;
+        browse.MinimumSize = useCurrent.MinimumSize = new Size(0, rowHeight);
         browse.Click += (_, _) => Browse();
         useCurrent.Click += (_, _) => SelectImage(currentPrimary, fromWindows: true);
         undo.Click += (_, _) => RunChange(() => { selected = undoImage!(); ShowSelected(); }, "ImageUndone");
@@ -121,7 +130,7 @@ internal sealed class ConfigForm : Form
         choose.Controls.Add(useCurrent, 1, 0);
         choose.Controls.Add(CreateHelpButton("ImageHelpButton", "ImageHelpTitle", "ImageHelpText"), 2, 0);
         layout.Controls.Add(choose, 0, 3);
-        var preferences = new TableLayoutPanel { Name = "Preferences", AutoSize = true, Dock = DockStyle.Fill,
+        var preferences = new TableLayoutPanel { Name = "Preferences", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 4, Margin = Padding.Empty };
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         preferences.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
@@ -151,7 +160,7 @@ internal sealed class ConfigForm : Form
         preferences.SetColumnSpan(startup, 2);
         preferences.Controls.Add(CreateHelpButton("StartupHelpButton", "StartupCheck", "StartupHint"), 2, 3);
         layout.Controls.Add(preferences, 0, 4);
-        var response = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
+        var response = new TableLayoutPanel { AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1,
             Margin = new Padding(0, 4, 0, 4) };
         response.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         response.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -163,7 +172,7 @@ internal sealed class ConfigForm : Form
         response.Controls.Add(feedback, 0, 0);
         response.Controls.Add(errorDetails, 1, 0);
         layout.Controls.Add(response, 0, 5);
-        var footer = new TableLayoutPanel { AutoSize = true, Dock = DockStyle.Bottom, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
+        var footer = new TableLayoutPanel { Name = "SettingsFooter", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty, Padding = new Padding(16, 6, 16, 16) };
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         footer.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -172,7 +181,35 @@ internal sealed class ConfigForm : Form
         footer.Controls.Add(undo, 0, 0);
         footer.Controls.Add(log, 2, 0);
         footer.Controls.Add(close, 3, 0);
-        layout.Controls.Add(footer, 0, 6);
+        frame.Controls.Add(footer, 0, 1);
+        sizing = new SettingsSizing(this, layout, footer, viewport, workingArea, () =>
+        {
+            recent.MeasureRows();
+            status.Height = Font.Height + (int)Math.Ceiling(8d * DeviceDpi / 96);
+            feedback.Height = Font.Height * 2 + (int)Math.Ceiling(4d * DeviceDpi / 96);
+            foreach (var selector in new[] { languageSelector, themeSelector, pollSelector })
+            {
+                using var graphics = selector.CreateGraphics();
+                var itemWidth = selector.Items.Cast<object>().Select(item => TextRenderer.MeasureText(graphics,
+                    selector.GetItemText(item), selector.Font).Width).DefaultIfEmpty(0).Max();
+                var width = Math.Max((int)Math.Ceiling(170d * DeviceDpi / 96), itemWidth + SystemInformation.VerticalScrollBarWidth + 16);
+                selector.MinimumSize = new Size(width, 0);
+                selector.Width = width;
+            }
+            foreach (var button in helpTopics.Select(t => t.Button).Concat([browse, useCurrent, undo, close, log, errorDetails]))
+            {
+                using var graphics = button.CreateGraphics();
+                var text = TextRenderer.MeasureText(graphics, button.Text, button.Font, new Size(10000, 10000), TextFormatFlags.SingleLine);
+                var border = (int)Math.Ceiling(6d * DeviceDpi / 96);
+                var help = button.Text == "?";
+                button.AutoSize = true;
+                button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                var width = text.Width + button.Padding.Horizontal + border;
+                var height = text.Height + button.Padding.Vertical + border;
+                if (help) width = height = Math.Max(Math.Max(width, height), (int)Math.Ceiling(30d * DeviceDpi / 96));
+                button.MinimumSize = new Size(width, height);
+            }
+        }, reportLayout);
         CancelButton = close;
         FormClosing += (_, args) => { if (busy) args.Cancel = true; };
         Load += (_, _) => BeginInvoke((Action)(() => WindowPresentation.Reveal(this)));
@@ -180,9 +217,11 @@ internal sealed class ConfigForm : Form
         updatingControls = false;
         ApplyTexts();
         this.themes.Bind(this);
+        ResumeLayout(performLayout: true);
     }
 
     internal SettingsHelpPopup? CurrentHelp => helpPopup;
+    internal void FitSettings(string reason) => sizing.Refresh(reason);
 
     private Button CreateHelpButton(string name, string title, string body)
     {
@@ -276,6 +315,7 @@ internal sealed class ConfigForm : Form
         feedback.ForeColor = lastError is null ? themes.Palette.Success : themes.Palette.Error;
         feedback.Text = lastError is not null ? UiText.Error(lastError, language, errorFallback) : feedbackKey is null ? "" : T(feedbackKey);
         UpdateEnabled();
+        if (Visible) sizing.Refresh("content-change");
     }
 
     private void UpdateEnabled()
@@ -346,7 +386,7 @@ internal sealed class ConfigForm : Form
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { helpPopup?.Dispose(); if (ownsThemes) themes.Dispose(); }
+        if (disposing) { sizing.Dispose(); helpPopup?.Dispose(); if (ownsThemes) themes.Dispose(); }
         base.Dispose(disposing);
         if (disposing) applicationIcon.Dispose();
     }

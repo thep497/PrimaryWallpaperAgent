@@ -293,4 +293,9 @@
   <data name="Theme_dark" xml:space="preserve"><value>มืด</value></data>
   <data name="ThemeHint" xml:space="preserve"><value>เลือกธีมสว่างหรือมืด หรือให้ตามโหมดสีแอปของ Windows เปลี่ยนทันทีและจำค่าที่เลือก ใช้กับหน้าต่างและเมนู tray ของแอป ส่วนหน้าต่างเลือกไฟล์และข้อความระบบใช้สีตาม Windows</value></data>
   <data name="InvalidTheme" xml:space="preserve"><value>เลือกธีมตามระบบ สว่าง หรือมืด</value></data>
+  <data name="OpenLogsFolder" xml:space="preserve"><value>เปิดโฟลเดอร์ log</value></data>
+  <data name="ExportDiagnostics" xml:space="preserve"><value>ส่งออกข้อมูลวิเคราะห์…</value></data>
+  <data name="ExportComplete" xml:space="preserve"><value>บันทึก ZIP สำหรับตรวจปัญหาแล้วที่:
+{0}</value></data>
+  <data name="ExportFailed" xml:space="preserve"><value>ส่งออกข้อมูลไม่สำเร็จ กรุณาเลือกชื่อ ZIP ใหม่ในโฟลเดอร์ที่เขียนได้</value></data>
 </root>

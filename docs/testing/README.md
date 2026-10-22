@@ -26,3 +26,7 @@
 - [v0.4.2 recent pictures and missing-source recovery](RECENT-IMAGES-TEST.md)
 
 - [App themes and thumbnail-only image selection](THEME-TEST.md)
+
+- [New monitor wallpaper recovery](NEW-MONITOR-TEST.md)
+
+- [Central logs, support export and Settings DPI](LOGGING-DPI-TEST.md)

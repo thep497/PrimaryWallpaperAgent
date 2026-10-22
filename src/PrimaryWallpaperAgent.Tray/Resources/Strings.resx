@@ -293,4 +293,9 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="Theme_dark" xml:space="preserve"><value>Dark</value></data>
   <data name="ThemeHint" xml:space="preserve"><value>Choose Light or Dark, or follow the Windows app color setting with System. Changes apply immediately and are remembered. This controls the app's own windows and tray menu; Windows file pickers and system dialogs follow Windows.</value></data>
   <data name="InvalidTheme" xml:space="preserve"><value>Choose System, Light or Dark.</value></data>
+  <data name="OpenLogsFolder" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="ExportDiagnostics" xml:space="preserve"><value>Export diagnostics…</value></data>
+  <data name="ExportComplete" xml:space="preserve"><value>Support ZIP saved to:
+{0}</value></data>
+  <data name="ExportFailed" xml:space="preserve"><value>Could not export diagnostics. Choose a new ZIP filename in a writable folder.</value></data>
 </root>

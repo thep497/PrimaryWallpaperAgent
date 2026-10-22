@@ -14,4 +14,5 @@ function Set-LocalBuildEnvironment {
     $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
     $env:DOTNET_ADD_GLOBAL_TOOLS_TO_PATH = '0'
     $env:DOTNET_NOLOGO = '1'
+    $env:NUGET_PACKAGES = Join-Path $script:ProjectRoot '.local\release-nuget'
 }

@@ -67,11 +67,7 @@ internal static class Program
             {
                 if (dataRoot is not null)
                 {
-                    var folder = Path.Combine(dataRoot, "runtime");
-                    Directory.CreateDirectory(folder);
-                    var path = Path.Combine(folder, "startup-error.log");
-                    LogRetention.AppendBounded(path, error + Environment.NewLine);
-                    LogRetention.Prune(dataRoot, path, DateTime.UtcNow);
+                    RuntimeLog.StartupError(dataRoot, error);
                 }
             }
             catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
@@ -128,6 +124,10 @@ internal static class Program
         CheckUi(SelectedImage.Read(images.PhotoPath), store.Root);
         var folder = Path.Combine(store.Root, "runtime");
         Directory.CreateDirectory(folder);
+        using (var log = new RuntimeLog(store.Root, "package-check"))
+            log.Write("PACKAGE_CHECK; bundled logger and file sink loaded");
+        var export = Path.Combine(folder, "package-check-support-" + Guid.NewGuid().ToString("N") + ".zip");
+        _ = DiagnosticsExporter.Create(store.Root, export);
         File.WriteAllText(Path.Combine(folder, "package-check.json"), JsonSerializer.Serialize(new
         {
             Passed = true, Version = Application.ProductVersion, Flavor = BuildInfo.Flavor, ProcessPath = Environment.ProcessPath,

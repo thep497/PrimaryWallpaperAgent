@@ -9,14 +9,23 @@ internal sealed class PolicyConflictException(string message) : InvalidOperation
 
 internal static class WallpaperPolicy
 {
-    internal static bool Repair(PolicyImages images, ProbeResult current, ITrialDesktop desktop, Action<string> log)
+    internal static bool Repair(PolicyImages images, ProbeResult current, ITrialDesktop desktop, Action<string> log, ProbeResult? acceptedTopology = null)
     {
         var active = TrialEngine.Active(current);
         if (current.Position != 4 || current.SlideshowStatus != 1)
             throw new PolicyConflictException("Wallpaper mode changed. Select Picture / Fill before resuming.");
         var known = images.AcceptedPaths.Concat([images.PhotoPath, images.BlackPath]);
-        if (active.Any(w => !known.Contains(w.WallpaperPath, StringComparer.OrdinalIgnoreCase)))
+        var unfamiliar = active.Any(w => !known.Contains(w.WallpaperPath, StringComparer.OrdinalIgnoreCase));
+        // Only an observed change of attached monitor IDs in this session can
+        // explain Windows restoring remembered assignments during hotplug.
+        // Primary/position/order changes alone do not authorize another picture.
+        var monitorSetChanged = acceptedTopology is not null && acceptedTopology.SessionId == current.SessionId &&
+            !TrialEngine.Active(acceptedTopology).Select(w => w.MonitorId).ToHashSet(StringComparer.OrdinalIgnoreCase)
+                .SetEquals(active.Select(w => w.MonitorId));
+        if (unfamiliar && !monitorSetChanged)
             throw new PolicyConflictException("Wallpaper differs from the current chosen image. Paused to preserve your choice, even if used previously.");
+        if (monitorSetChanged)
+            log($"HOTPLUG_REBASE; active={active.Length}; unfamiliarWallpaper={unfamiliar}; current Windows primary");
         var plan = new TrialPlan(1, "tray", images.PhotoPath, images.PhotoPath, images.PhotoSha256,
             images.BlackPath, images.BlackSha256, current);
         if (TrialEngine.Matches(plan, current, restored: false)) return false;

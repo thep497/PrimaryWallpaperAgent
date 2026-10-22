@@ -21,10 +21,14 @@ internal sealed class RecentImageStrip : TableLayoutPanel
     {
         Name = "RecentImages";
         AutoSize = true;
-        Dock = DockStyle.Fill;
+        AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        Dock = DockStyle.Top;
         Margin = new Padding(0, 0, 0, 5);
         ColumnCount = RecentImageHistory.Limit;
         RowCount = 3;
+        RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        RowStyles.Add(new RowStyle(SizeType.Absolute, 76));
+        RowStyles.Add(new RowStyle(SizeType.Absolute, Font.Height + 8));
         Controls.Add(heading, 0, 0);
         SetColumnSpan(heading, RecentImageHistory.Limit);
         for (var i = 0; i < buttons.Length; i++)
@@ -38,7 +42,7 @@ internal sealed class RecentImageStrip : TableLayoutPanel
             buttons[i] = button;
             Controls.Add(button, i, 1);
         }
-        filename.Height = Font.Height + 8;
+        MeasureRows();
         Controls.Add(filename, 0, 2);
         Controls.Add(empty, 0, 1);
         SetColumnSpan(empty, RecentImageHistory.Limit);
@@ -98,7 +102,7 @@ internal sealed class RecentImageStrip : TableLayoutPanel
         heading.Text = UiText.T("RecentImages", language);
         empty.Text = UiText.T("ChooseImageFirst", language);
         filename.Text = entries.FirstOrDefault() is { } first ? first.Label ?? Path.GetFileName(first.PhotoFile) : "";
-        filename.Height = Font.Height + 8;
+        MeasureRows();
         filename.AccessibleName = UiText.T("RecentCurrent", language) + ": " + filename.Text;
         tips.SetToolTip(filename, filename.Text);
         for (var i = 0; i < entries.Length; i++)
@@ -118,6 +122,15 @@ internal sealed class RecentImageStrip : TableLayoutPanel
             button.FlatAppearance.BorderColor = isCurrent ? palette.Accent : palette.Border;
             tips.SetToolTip(button, description + Environment.NewLine + button.AccessibleDescription);
         }
+    }
+
+    // A caption in a percentage-width cell must not determine the strip height.
+    // In particular, cached SHA-256 filenames must stay a single ellipsized line.
+    internal void MeasureRows()
+    {
+        var scale = DeviceDpi / 96d;
+        RowStyles[1].Height = (float)Math.Ceiling((entries.Length == 0 ? 48 : 76) * scale);
+        RowStyles[2].Height = entries.Length == 0 ? 0 : filename.Font.Height + (float)Math.Ceiling(8 * scale);
     }
 
     internal void ApplyPalette(ThemePalette value)

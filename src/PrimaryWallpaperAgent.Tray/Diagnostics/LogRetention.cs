@@ -35,29 +35,14 @@ internal static partial class LogRetention
         return rotated;
     }
 
-    // Only direct managed files in runtime and recognized session directories. No recursive deletion or asset access.
     internal static LogPruneResult Prune(string dataRoot, string? activeLog, DateTime utcNow,
-        long maxBytes = MaxBytes, int retentionDays = RetentionDays)
+        long maxBytes = MaxBytes, int retentionDays = RetentionDays, string? activeSession = null)
     {
-        var runtime = Path.GetFullPath(Path.Combine(dataRoot, "runtime"));
-        if (!Directory.Exists(runtime) || IsLink(runtime)) return new(0, 0, true);
-        var files = new List<FileInfo>();
-        var sessions = new List<DirectoryInfo>();
-        try
-        {
-            foreach (var path in Directory.EnumerateFiles(runtime, "startup-error*.log", SearchOption.TopDirectoryOnly))
-                if (Path.GetFileName(path) is "startup-error.log" or "startup-error.previous.log") Add(path);
-            foreach (var path in Directory.EnumerateDirectories(runtime, "*", SearchOption.TopDirectoryOnly))
-            {
-                var directory = new DirectoryInfo(path);
-                if (!SessionName().IsMatch(directory.Name) || IsLink(path)) continue;
-                sessions.Add(directory);
-                foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.TopDirectoryOnly))
-                    if (ManagedFile().IsMatch(Path.GetFileName(file))) Add(file);
-            }
-        }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
-
+        List<FileInfo> files;
+        string runtime;
+        try { runtime = RuntimeFiles.Runtime(dataRoot); files = RuntimeFiles.List(dataRoot); }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return new(0, 0, true); }
+        if (!Directory.Exists(runtime)) return new(0, 0, true);
         var deleted = 0;
         var cutoff = utcNow.AddDays(-retentionDays);
         long total = files.Sum(file => file.Length);
@@ -72,27 +57,20 @@ internal static partial class LogRetention
                 total -= file.Length;
                 deleted++;
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
-        foreach (var directory in sessions)
+        foreach (var path in Directory.EnumerateDirectories(runtime))
         {
-            // Empty-only removal. Unknown files/subdirectories are preserved.
             try
             {
-                if (!StringComparer.OrdinalIgnoreCase.Equals(directory.FullName, activeLog is null ? null : Path.GetDirectoryName(activeLog)) &&
-                    !IsLink(directory.FullName) && !Directory.EnumerateFileSystemEntries(directory.FullName).Any())
-                    Directory.Delete(directory.FullName, recursive: false);
+                if (!RuntimeFiles.SessionName().IsMatch(Path.GetFileName(path)) || IsLink(path) ||
+                    StringComparer.OrdinalIgnoreCase.Equals(path, activeSession) ||
+                    StringComparer.OrdinalIgnoreCase.Equals(path, activeLog is null ? null : Path.GetDirectoryName(activeLog))) continue;
+                if (!Directory.EnumerateFileSystemEntries(path).Any()) Directory.Delete(path, recursive: false);
             }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         }
         return new(deleted, total, total <= maxBytes);
-
-        void Add(string path)
-        {
-            try { if (!IsLink(path)) files.Add(new FileInfo(path)); }
-            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
-        }
     }
-
-    private static bool IsLink(string path) => (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+    private static bool IsLink(string path) => RuntimeFiles.IsLink(path);
 }

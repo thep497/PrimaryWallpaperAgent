@@ -29,7 +29,12 @@ internal sealed class AgentContext : ApplicationContext
     private readonly Stopwatch uptime = Stopwatch.StartNew();
     private readonly Queue<TimeSpan> repairs = new();
     private readonly string logFolder;
-    private readonly string logPath;
+    private readonly RuntimeLog runtimeLog;
+    private string logPath => runtimeLog.CurrentFile;
+    private TimeSpan? mappingWaitSince;
+    private TimeSpan lastMappingNotice;
+    private string? mappingSignature;
+    private string? observedTopology;
     private bool paused;
     private bool needsConfig;
     private ConfigForm? configForm;
@@ -37,6 +42,7 @@ internal sealed class AgentContext : ApplicationContext
     private string statusKey = "StatusChecking";
     private object[] statusArgs = [];
     private string? previous;
+    private ProbeResult? acceptedTopology; // Last successful policy check, in memory only.
     private int failures;
     private int samples;
     private int repairCount;
@@ -56,7 +62,7 @@ internal sealed class AgentContext : ApplicationContext
         timer.Interval = PollingOptions.Validate(config.PollIntervalMs);
         logFolder = Path.Combine(store.Root, "runtime", DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", System.Globalization.CultureInfo.InvariantCulture) + "-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(logFolder);
-        logPath = Path.Combine(logFolder, "agent.log");
+        runtimeLog = new RuntimeLog(store.Root, Path.GetFileName(logFolder));
         TrimLogs(force: true);
         Log(smoke ? "START read-only tray smoke test; no setters" : "START tray v" + AboutForm.VersionText + "; two stable samples; startup writes only on explicit setting changes");
         Log("UI_LANGUAGE_LOADED language=" + config.Language);
@@ -95,24 +101,52 @@ internal sealed class AgentContext : ApplicationContext
         if (liveSettings.IsApplying) return;
         if (openOnFirstTick) { openOnFirstTick = false; ShowConfig(); return; }
         if (paused || !config.HasChosenImage) return;
-        ProbeResult snapshot;
+        ProbeResult? snapshot = null;
         try
         {
             snapshot = desktop.Capture();
             samples++;
             displayCount = TrialEngine.Active(snapshot).Length;
-            failures = 0;
+            if (failures > 0)
+            {
+                Log($"MAPPING_RECOVERED; failures={failures}; waitedMs={(uptime.Elapsed - (mappingWaitSince ?? uptime.Elapsed)).TotalMilliseconds:F0}");
+                Save("mapping-recovered", DiagnosticSnapshots.Mapping(snapshot));
+            }
+            failures = 0; mappingWaitSince = null; mappingSignature = null;
         }
         catch (Exception error)
         {
             previous = null;
             displayCount = null;
-            if (++failures >= 10) Pause(error);
-            else { Log("WAIT " + error.Message); SetStatus("StatusWaiting"); }
+            mappingWaitSince ??= uptime.Elapsed;
+            failures++;
+            var signature = JsonSerializer.Serialize(new { snapshot?.TopologyStable, snapshot?.Displays, snapshot?.Wallpapers });
+            if (signature != mappingSignature)
+            {
+                mappingSignature = signature;
+                Save("mapping-wait", DiagnosticSnapshots.Mapping(snapshot));
+                Log($"MAPPING_WAIT; failure={failures}; {error}");
+                lastMappingNotice = uptime.Elapsed;
+            }
+            else if (uptime.Elapsed - lastMappingNotice >= TimeSpan.FromSeconds(30))
+            {
+                Log($"MAPPING_STILL_WAITING; failures={failures}; waitedMs={(uptime.Elapsed - mappingWaitSince.Value).TotalMilliseconds:F0}");
+                lastMappingNotice = uptime.Elapsed;
+            }
+            if (failures >= 10) Pause(error);
+            else SetStatus("StatusWaiting");
             return;
         }
         try
         {
+            var topology = JsonSerializer.Serialize(new { snapshot.SessionId, snapshot.Displays,
+                MonitorIds = TrialEngine.Active(snapshot).Select(w => w.MonitorId).Order(StringComparer.OrdinalIgnoreCase) });
+            if (topology != observedTopology)
+            {
+                observedTopology = topology;
+                Save("display-observed", snapshot);
+                Log($"TOPOLOGY_OBSERVED; active={snapshot.Displays.Length}; session={snapshot.SessionId}; remote={SystemInformation.TerminalServerSession}");
+            }
             var fingerprint = WallpaperGuard.Fingerprint(snapshot);
             if (fingerprint != previous)
             {
@@ -126,16 +160,20 @@ internal sealed class AgentContext : ApplicationContext
                 w.WallpaperPath, w.IsPrimary == true ? images.PhotoPath : images.BlackPath));
             if (needsRepair && repairs.Count >= 8)
                 throw new PolicyConflictException("Wallpaper changed repeatedly (8 repairs in 60 seconds). Review the log before resuming.");
+            var attempt = Guid.NewGuid().ToString("N");
             if (needsRepair)
             {
                 _ = store.Images(config);
-                Save($"before-{repairCount + 1}.json", snapshot);
+                Log("REPAIR_BEGIN op=" + attempt);
+                Save("attempt-" + attempt + "-before", snapshot);
             }
-            if (WallpaperPolicy.Repair(images, snapshot, desktop, Log))
+            var repaired = WallpaperPolicy.Repair(images, snapshot, desktop, Log, acceptedTopology);
+            acceptedTopology = snapshot; // Consume this transition only after successful validation/apply.
+            if (repaired)
             {
                 repairs.Enqueue(uptime.Elapsed);
                 repairCount++;
-                Save($"after-{repairCount}.json", desktop.Capture());
+                Save("attempt-" + attempt + "-after", desktop.Capture());
                 Log($"REPAIR {repairCount}; active displays={snapshot.Displays.Length}");
                 previous = null;
             }
@@ -235,7 +273,7 @@ internal sealed class AgentContext : ApplicationContext
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
             }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates,
-            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage, theme: config.Theme, themes: themes);
+            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage, theme: config.Theme, themes: themes, reportLayout: Log);
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));
@@ -258,7 +296,7 @@ internal sealed class AgentContext : ApplicationContext
         if (oldInterval != config.PollIntervalMs) previous = null;
         if (wallpaperApplied)
         {
-            paused = false; needsConfig = false; failures = 0; previous = null; repairs.Clear();
+            paused = false; needsConfig = false; failures = 0; previous = null; acceptedTopology = null; repairs.Clear();
             SetStatus("StatusSaved");
         }
         else RenderChrome(); // Preference edits preserve pause/error state.
@@ -282,7 +320,12 @@ internal sealed class AgentContext : ApplicationContext
         if (string.IsNullOrWhiteSpace(current.WallpaperPath)) throw new UiMessageException("PrimaryImageMissing");
         return current.WallpaperPath;
     }
-    private void SetStatus(string key, params object[] args) { statusKey = key; statusArgs = args; RenderChrome(); }
+    private void SetStatus(string key, params object[] args)
+    {
+        if (statusKey != key || !statusArgs.SequenceEqual(args))
+            Log("STATE key=" + key + "; values=" + JsonSerializer.Serialize(args));
+        statusKey = key; statusArgs = args; RenderChrome();
+    }
     private void RenderChrome()
     {
         string T(string key) => UiText.T(key, config.Language);
@@ -299,20 +342,25 @@ internal sealed class AgentContext : ApplicationContext
     {
         try
         {
-            if (LogRetention.AppendBounded(logPath, $"{DateTimeOffset.Now:O} {message}{Environment.NewLine}")) TrimLogs(force: true);
+            runtimeLog.Write(message);
+            TrimLogs();
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
     }
     private void Save(string name, object value)
     {
-        File.WriteAllText(Path.Combine(logFolder, name), JsonSerializer.Serialize(value, SettingsStore.JsonOptions));
-        TrimLogs(force: true);
+        try
+        {
+            DiagnosticSnapshots.Save(logFolder, runtimeLog.RunId, name, value);
+            TrimLogs(force: true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { Log("DIAGNOSTICS_SAVE_ERROR " + error.Message); }
     }
     private void TrimLogs(bool force = false)
     {
         if (!force && uptime.Elapsed < nextLogCleanup) return;
         nextLogCleanup = uptime.Elapsed + TimeSpan.FromHours(1);
-        try { LogRetention.Prune(store.Root, logPath, DateTime.UtcNow); }
+        try { LogRetention.Prune(store.Root, logPath, DateTime.UtcNow, activeSession: logFolder); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
     }
     private void OpenLog(string? language = null)
@@ -340,7 +388,7 @@ internal sealed class AgentContext : ApplicationContext
     }
     protected override void Dispose(bool disposing)
     {
-        if (disposing) { themes.Dispose(); updates.Dispose(); updateTimer.Dispose(); timer.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
+        if (disposing) { themes.Dispose(); updates.Dispose(); updateTimer.Dispose(); timer.Dispose(); runtimeLog.Dispose(); icon.Dispose(); trayIcons.Dispose(); menu.Dispose(); }
         base.Dispose(disposing);
     }
 }

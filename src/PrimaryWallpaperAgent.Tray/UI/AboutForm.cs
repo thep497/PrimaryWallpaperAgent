@@ -12,7 +12,7 @@ internal sealed class AboutForm : Form
     private readonly bool ownsThemes;
     private readonly Icon applicationIcon = AppBranding.CreateApplicationIcon();
 
-    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null, UpdateController? updates = null, ThemeManager? themes = null)
+    internal AboutForm(string language, string dataRoot, Action<string>? openTarget = null, UpdateController? updates = null, ThemeManager? themes = null, Action? exportDiagnostics = null, Action<string>? reportLayout = null)
     {
         ownsThemes = themes is null;
         this.themes = themes ?? new ThemeManager();
@@ -46,6 +46,20 @@ internal sealed class AboutForm : Form
         releases.Click += (_, _) => Open(ReleasesUrl);
         data.Click += (_, _) => Open(dataRoot);
         actions.Controls.AddRange([releases, data, close]);
+        var support = new FlowLayoutPanel { AutoSize = true, WrapContents = true, MaximumSize = new Size(450, 0), Margin = new Padding(0, 0, 0, 10) };
+        var logs = new Button { Name = "OpenLogsButton", AutoSize = true, Text = T("OpenLogsFolder"), Enabled = !string.IsNullOrWhiteSpace(dataRoot) };
+        var export = new Button { Name = "ExportDiagnosticsButton", AutoSize = true, Text = T("ExportDiagnostics"), Enabled = !string.IsNullOrWhiteSpace(dataRoot) };
+        logs.Click += (_, _) => Open(Path.Combine(dataRoot, "runtime", "logs"));
+        export.Click += async (_, _) =>
+        {
+            export.Enabled = false;
+            try { if (exportDiagnostics is not null) exportDiagnostics(); else await SupportActions.ExportAsync(this, dataRoot, language); }
+            finally { if (!export.IsDisposed) export.Enabled = true; }
+        };
+        support.Controls.AddRange([logs, export]); layout.Controls.Add(support);
+        Load += (_, _) => Report("open");
+        DpiChanged += (_, _) => BeginInvoke((Action)(() => { PerformLayout(); Report("dpi-change"); }));
+        void Report(string reason) => reportLayout?.Invoke($"UI_ABOUT_LAYOUT reason={reason}; dpi={DeviceDpi}; client={ClientSize}; remote={SystemInformation.TerminalServerSession}");
         if (updates is not null) layout.Controls.Add(new UpdatePanel(updates, language, Open));
         layout.Controls.Add(actions);
         CancelButton = close;
