@@ -1,22 +1,23 @@
 # Primary Wallpaper Agent
 
-A Windows 11 tray app that keeps a picture on the current Windows primary display and makes other extended displays black. It follows primary changes and monitor connections automatically.
+A Windows 11 tray app that keeps a picture on the current Windows primary display and lets other extended displays share another picture or stay black by default. It follows primary changes and monitor connections automatically.
 
-แสดงภาพบน Windows Primary Display เพียงจอเดียว จออื่นที่ Extend เป็นสีดำ รองรับภาษาไทยและอังกฤษ
+ตั้งภาพบน Windows Primary Display และอีกภาพร่วมกันบนจอรองทุกจอ โดยจอรองเริ่มต้นเป็นสีดำ รองรับภาษาไทยและอังกฤษ
 
 ## Download and first launch
 
-Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.4.5 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
+Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.5.0 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
 
 1. Keep the EXE in a permanent local folder. Exit any older running instance before launching it.
 2. Set Windows background to **Picture** and fit to **Fill**. Spotlight/slideshow are not supported.
 3. On first launch, Settings opens and waits for an explicit image choice. Existing wallpaper remains untouched until that choice.
-4. Choose a JPG/PNG/BMP, or select **Use current primary image**. The image applies immediately to the current primary; other extended displays become black.
-5. Optionally select Thai/English, a 0.5/1/2/5 second check interval, or **Start with Windows**. Changes save immediately.
+4. Choose a JPG/PNG/BMP, or select **Use current primary image**. The image applies immediately to the current primary; other extended displays stay black by default.
+5. To use a secondary picture, select **All secondary displays** above the image strip and choose one picture for every secondary. **Use black** restores the default. Switching the viewed role alone changes nothing.
+6. Optionally select Thai/English, a 0.5/1/2/5 second check interval, or **Start with Windows**. Changes save immediately.
 
-**Recent pictures** shows the last four distinct successful choices, including the current image. Click a thumbnail to apply its saved copy, even if the original file or Windows wallpaper cache is missing. The list survives restarts; existing installations start with their current cached picture and build history with subsequent choices. Older asset files are not scanned/imported.
+**Recent pictures** uses one shared four-picture library. The current picture for the viewed role appears first; both roles retain their current cached picture even if it falls out of the library. Click a thumbnail to apply its saved copy, even if the original file or Windows wallpaper cache is missing. The list survives restarts; existing installations start with their current cached picture and build history with subsequent choices. Older asset files are not scanned/imported.
 
-Settings uses only the recent-picture thumbnails, with the selected filename below the first picture. Choose **System / Light / Dark** to change the app theme immediately. System follows Windows app colors while the app is open. Native file/message dialogs follow Windows. Settings opens at a compact size and supports resizing in both directions. If the window is too short, only the content scrolls; footer actions stay visible. Click **?** for explanations. **Undo image** restores the previous successful image selection, retaining other preferences. Undo is one level and lasts until app exit. Close/Esc retains successful changes. Display checking continues while Settings is open.
+Settings uses only the recent-picture thumbnails, with the selected filename below the first picture. Choose **System / Light / Dark** to change the app theme immediately. System follows Windows app colors while the app is open. Native file/message dialogs follow Windows. Settings opens at a compact size and supports resizing in both directions. If the window is too short, only the content scrolls; footer actions stay visible. Click **?** for explanations. **Undo image** restores the previous successful selection for the role being edited, retaining the other role and all preferences. Each role has one undo until app exit. Close/Esc retains successful changes. Display checking continues while Settings is open.
 
 Start with Windows uses a per-user Run registry entry and the actual EXE path. Copying the EXE to another PC does not enable startup there. If moved/renamed after opting in, toggle this option off/on from its new location. See [deployment details](docs/development/DEPLOYMENT.md).
 
@@ -51,7 +52,7 @@ New installations create settings, cached images and logs in **%LOCALAPPDATA%\Pr
 
 Older installations with settings.json beside the EXE continue using that folder. No silent migration or import of private trial assets occurs. Exit keeps the current wallpaper assignments.
 
-One static image is shared across Windows Virtual Desktops. Unknown wallpaper changes pause the agent for explicit adoption through Settings. Changing the image in Windows alone does not automatically adopt it.
+The same primary/secondary selections are shared across Windows Virtual Desktops. Unknown wallpaper changes pause the agent for explicit adoption through Settings. Changing the image in Windows alone does not automatically adopt it.
 
 ## Uninstall
 
@@ -62,9 +63,15 @@ One static image is shared across Windows Virtual Desktops. Unknown wallpaper ch
 
 ภาษาไทย: ปิดเริ่มพร้อม Windows ก่อน แล้วออกจากโปรแกรมและลบ EXE ข้อมูลที่บันทึกไว้จะลบเพิ่มหรือเก็บไว้ก็ได้ ส่วนภาพพื้นหลังให้ตั้งใหม่ผ่าน Windows ตามต้องการ
 
-## ## New monitor recovery
+## Primary and secondary pictures
 
-The agent distinguishes an observed change of active monitors from an unfamiliar wallpaper on an unchanged monitor set. After complete, stable display samples, connecting/removing/replacing a monitor can restore the saved picture to the current primary and black to the others automatically, even when Windows returns remembered wallpaper paths. Unfamiliar wallpaper on the unchanged monitor set still pauses for an explicit choice. A cold start has no remembered monitor baseline. See [new-monitor recovery and remaining physical checks](docs/testing/NEW-MONITOR-TEST.md).
+Settings edits **Primary display / All secondary displays** using the same image strip. All secondaries share one picture or black; pictures follow Windows primary/secondary roles when displays are switched, connected or removed. The library is shared and Undo is separate for each role. Secondary pictures may be prepared with one monitor connected or before selecting the first primary; the watcher stays inactive until a primary picture is explicitly selected.
+
+Older settings open with the existing primary and black secondary default. The first image edit upgrades settings to schema 4 and saves the exact pre-upgrade settings as **settings-before-schema4.json** beside settings.json. This backup is not rotated or included in support ZIPs. **v0.4.5 and earlier cannot read schema 4**: to downgrade, exit the app, preserve the new settings separately and restore the pre-upgrade backup as settings.json. See [compatibility, verification and role checks](docs/testing/SECONDARY-WALLPAPER-TEST.md).
+
+## New monitor recovery
+
+The agent distinguishes an observed change of active monitors from an unfamiliar wallpaper on an unchanged monitor set. After complete, stable display samples, connecting/removing/replacing a monitor can restore the saved primary and secondary assignments automatically, even when Windows returns remembered wallpaper paths. Unfamiliar wallpaper on the unchanged monitor set still pauses for an explicit choice. A cold start has no remembered monitor baseline. See [new-monitor recovery and remaining physical checks](docs/testing/NEW-MONITOR-TEST.md).
 
 ## Diagnostics and DPI changes
 
@@ -72,7 +79,7 @@ Daily/size-rolled logs are centralized in runtime/logs; restarts append instead 
 
 Settings reserves its footer, bounds thumbnail/caption heights and re-measures controls after DPI changes. The selected filename remains a single ellipsized line with the full name on hover. The window can shrink vertically or horizontally; scrolling is limited to the content when needed. See [diagnostics and DPI verification](docs/testing/LOGGING-DPI-TEST.md).
 
-Build and tests
+## Build and tests
 
 Windows, PowerShell 7 and .NET SDK **10.0.402** (see global.json):
 
@@ -90,7 +97,7 @@ Build and verify a distributable EXE:
 .\scripts\Test-Release.ps1
 ```
 
-Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.4.5/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
+Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.5.0/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
 
 Publish-Tray.ps1 and Start-WallpaperTray.ps1 remain legacy helpers for the private trial package, rather than public installation steps.
 
@@ -107,7 +114,7 @@ Probe exit 0 means complete; 1 means fatal; 2 means some API entries were unread
 - src/PrimaryWallpaperAgent.Core — display APIs, policy and engine.
 - src/PrimaryWallpaperAgent.Tray — tray, Settings, first-run and persistence.
 - src/PrimaryWallpaperAgent.Probe — read-only console and explicit diagnostics.
-- tests/PrimaryWallpaperAgent.Tests — 17 automated suites.
+- tests/PrimaryWallpaperAgent.Tests — 18 automated suites.
 - scripts — build, test, publish and diagnostics.
 - assets/branding — icons and reproducible source artwork.
 - docs/development and docs/testing — implementation and evidence.
@@ -119,7 +126,7 @@ Private settings, photos, monitor snapshots and trial plans are excluded from so
 
 The user previously verified primary switching, hotplug 3→1→3 and policy persistence across Virtual Desktops. On 20 October the user reported normal launch and expected wallpaper behavior. Detailed scenario results are still being collected. Physical-console mapping/recovery, projector, more than three physical displays, DPI transitions and startup after logon still need validation. Tests with 1/3/5 simulated displays do not establish hardware results.
 
-- [v0.4.5 release notes](docs/releases/v0.4.5.md)
+- [v0.5.0 release notes](docs/releases/v0.5.0.md)
 - [App themes and compact image selection](docs/testing/THEME-TEST.md)
 - [Recent picture recovery](docs/testing/RECENT-IMAGES-TEST.md)
 - [Deployment and startup](docs/development/DEPLOYMENT.md)

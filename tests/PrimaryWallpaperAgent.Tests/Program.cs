@@ -18,6 +18,7 @@ internal static class Program
             if (args is ["update-fixture"] or ["--apply-update", _] or ["--post-update", _] or ["--update-preflight", _] or ["--config"]) return UpdateProcessTests.Fixture(args);
             return args switch
             {
+                ["secondary"] => SecondaryWallpaperSelfTests.Run(),
                 ["policy"] => TrialSelfTests.Run(),
                 ["config"] => ConfigSelfTests.Run(),
                 ["window"] => WindowSelfTests.Run(),

@@ -14,7 +14,7 @@ internal static class ReleaseSelfTests
         var initial = SettingsStore.Parse(bytes);
         Assert(!initial.HasChosenImage && !initial.StartWithWindows, "Fresh launch is inactive and startup is opt-in");
         var images = store.Images(initial);
-        using (var black = new Bitmap(images.BlackPath))
+        using (var black = new Bitmap(images.SecondaryPath))
             Assert(black.GetPixel(0, 0).ToArgb() == Color.Black.ToArgb(), "Generated black asset decodes correctly");
         Assert(FirstRun.Open(store).SequenceEqual(bytes), "Second launch preserves initial bytes");
         Assert(FirstRun.DataRoot(Path.Combine(folder, "exe"), Path.Combine(folder, "user")) ==
@@ -60,7 +60,7 @@ internal static class ReleaseSelfTests
         live.Apply(new(selected, false, "en", true, 1000));
         Assert(live.Config.HasChosenImage && !live.CanUndoImage, "First accepted image activates; placeholder cannot become Undo target");
         Assert(desktop.State.Wallpapers.All(w => w.WallpaperPath ==
-            (w.IsPrimary == true ? live.Images.PhotoPath : live.Images.BlackPath)), "First image applies current primary policy");
+            (w.IsPrimary == true ? live.Images.PhotoPath : live.Images.SecondaryPath)), "First image applies current primary policy");
         var saved = store.Read();
         Assert(FirstRun.Open(store).SequenceEqual(saved), "Relaunch preserves configured image/preferences");
         Assert(SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(initial with { HasChosenImage = true })).HasChosenImage,

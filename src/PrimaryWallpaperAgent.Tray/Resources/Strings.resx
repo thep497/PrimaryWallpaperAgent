@@ -219,15 +219,11 @@ One static image is shared across virtual desktops. Spotlight is not supported.<
     <value>Wallpaper</value>
   </data>
   <data name="ImageHelpText">
-    <value>The selected image appears only on the current Windows primary display. Other extended displays stay black.
+    <value>Choose Primary display or All secondary displays before selecting a picture. Changing the viewed group does not change wallpaper. Secondary displays share one picture; Use black restores their default. Pictures follow the current Windows primary and secondary roles, including newly connected displays.
 
-Choose a JPG, PNG or BMP file (up to 32 MB and 40 million pixels). Choosing a file applies it immediately. Fill may crop the image edges.
+Choose JPG, PNG or BMP (up to 32 MB and 40 million pixels). Selections apply immediately. Fill may crop image edges differently on different screens.
 
-Use primary image adopts what is currently on the primary display. Undo image restores one previous image until the app exits, without undoing other settings.
-
-The image is shared across Virtual Desktops. Spotlight and slideshow are not supported.
-
-Recent pictures keeps the last four successful choices, including the current picture, across app restarts. Click a thumbnail to apply its saved copy immediately.</value>
+Use primary image adopts the current Windows primary picture. Undo affects only the group being edited and is available until app exit. The four-picture recent library is shared; current pictures stay cached separately. The same settings apply across Virtual Desktops. Spotlight/slideshow are not supported.</value>
   </data>
   <data name="StartupHint">
     <value>Starts this app after you sign in to Windows, for this user account.
@@ -251,7 +247,7 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="AboutTitle"><value>About</value></data>
   <data name="AboutLink"><value>v{0} · About</value></data>
   <data name="VersionLabel"><value>Version</value></data>
-  <data name="AboutDescription"><value>A picture on the Windows primary display. Other extended displays stay black.</value></data>
+  <data name="AboutDescription"><value>A picture on the Windows primary display. All secondary displays share another picture or stay black.</value></data>
   <data name="DataFolderLabel"><value>Settings, cached images and logs</value></data>
   <data name="GitHubReleases"><value>GitHub Releases</value></data>
   <data name="OpenDataFolder"><value>Open data folder</value></data>
@@ -298,4 +294,12 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="ExportComplete" xml:space="preserve"><value>Support ZIP saved to:
 {0}</value></data>
   <data name="ExportFailed" xml:space="preserve"><value>Could not export diagnostics. Choose a new ZIP filename in a writable folder.</value></data>
+  <data name="PrimaryDisplays" xml:space="preserve"><value>Primary display</value></data>
+  <data name="UseBlack" xml:space="preserve"><value>Use black</value></data>
+  <data name="SecondaryDisplays" xml:space="preserve"><value>All secondary displays</value></data>
+  <data name="BlackDefault" xml:space="preserve"><value>Black (default)</value></data>
+  <data name="WallpaperFor" xml:space="preserve"><value>Wallpaper for</value></data>
+  <data name="InvalidWallpaperTarget" xml:space="preserve"><value>Choose Primary display or All secondary displays.</value></data>
+  <data name="BlackHint" xml:space="preserve"><value>Use black on every secondary display.</value></data>
+  <data name="SecondaryImageSaved" xml:space="preserve"><value>Picture saved for all secondary displays, including ones connected later.</value></data>
 </root>

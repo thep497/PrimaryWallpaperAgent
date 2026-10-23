@@ -4,7 +4,7 @@ param([switch]$SkipBuild)
 if (-not $SkipBuild) { & (Join-Path $PSScriptRoot 'Build.ps1') -Configuration Debug }
 $testPath = Join-Path $script:ProjectRoot 'artifacts\bin\PrimaryWallpaperAgent.Tests\debug\PrimaryWallpaperAgent.Tests.exe'
 if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw 'Build the solution before running tests.' }
-foreach ($suite in @('policy','config','localization','polling','branding','instant','compact','recent','theme','hotplug','diagnostics','dpi','release','maintenance','instance','update')) {
+foreach ($suite in @('policy','secondary','config','localization','polling','branding','instant','compact','recent','theme','hotplug','diagnostics','dpi','release','maintenance','instance','update')) {
     & $testPath $suite
     if ($LASTEXITCODE -ne 0) { throw "Test suite failed: $suite ($LASTEXITCODE)" }
 }

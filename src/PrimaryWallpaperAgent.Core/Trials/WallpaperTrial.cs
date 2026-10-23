@@ -101,6 +101,7 @@ internal static class TrialEngine
             {
                 RequireSameTopology(plan, desktop.Capture());
                 var path = monitor.IsPrimary == true ? plan.PhotoPath : plan.BlackPath;
+                if (StringComparer.OrdinalIgnoreCase.Equals(monitor.WallpaperPath, path)) continue;
                 log($"SetWallpaper requested for {monitor.MonitorId}");
                 attempted = true; // A failing setter can still have side effects.
                 desktop.SetWallpaper(monitor.MonitorId, path);

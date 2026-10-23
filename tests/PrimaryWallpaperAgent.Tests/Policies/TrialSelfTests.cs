@@ -88,7 +88,7 @@ internal static class TrialSelfTests
             desktop.State = desktop.State with { SessionId = 22 };
             Assert(WallpaperPolicy.Repair(images, desktop.State, desktop, _ => { }), "Tray accepts fresh topology/session");
             Assert(desktop.State.Wallpapers.All(w => w.WallpaperPath ==
-                (w.IsPrimary == true ? images.PhotoPath : images.BlackPath)), "Tray targets only current primary");
+                (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath)), "Tray targets only current primary");
             var writes = desktop.Calls;
             Assert(!WallpaperPolicy.Repair(images, desktop.State, desktop, _ => { }) && writes == desktop.Calls,
                 "Tray does not repeat writes on matching state");

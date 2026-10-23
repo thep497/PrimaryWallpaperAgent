@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.4.5', [switch]$Stable)
+param([ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.5.0', [switch]$Stable)
 . (Join-Path $PSScriptRoot 'Common.ps1')
 Set-LocalBuildEnvironment
 $project = Join-Path $script:ProjectRoot 'src\PrimaryWallpaperAgent.Tray\PrimaryWallpaperAgent.Tray.csproj'

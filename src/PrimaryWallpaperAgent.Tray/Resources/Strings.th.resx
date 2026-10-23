@@ -219,15 +219,11 @@
     <value>ภาพพื้นหลัง</value>
   </data>
   <data name="ImageHelpText">
-    <value>แสดงภาพที่เลือกเฉพาะ Windows Primary Display จออื่นที่ Extend เป็นสีดำ
+    <value>เลือกจอหลักหรือจอรองทั้งหมดก่อนเลือกภาพ การสลับกลุ่มเพื่อดูค่าไม่เปลี่ยนภาพพื้นหลัง จอรองทุกจอใช้ภาพเดียวกัน กดใช้สีดำเพื่อกลับค่าเริ่มต้น ภาพจะตามบทบาทจอหลักและจอรองของ Windows รวมถึงจอที่ต่อเพิ่ม
 
-รองรับ JPG, PNG และ BMP ไม่เกิน 32 MB และ 40 ล้านพิกเซล เลือกไฟล์แล้วใช้ทันที แสดงแบบ Fill ซึ่งอาจตัดขอบภาพ
+เลือก JPG, PNG หรือ BMP (ไม่เกิน 32 MB และ 40 ล้านพิกเซล) แล้วมีผลทันที การแสดงแบบ Fill อาจตัดขอบภาพต่างกันตามสัดส่วนจอ
 
-ใช้ภาพจอหลัก คือรับภาพที่จอหลักใช้อยู่ตอนนี้ ย้อนกลับภาพ คืนภาพก่อนหน้าได้หนึ่งครั้งจนกว่าจะปิดโปรแกรม โดยไม่ย้อนการตั้งค่าอื่น
-
-ใช้ภาพร่วมกันทุก Virtual Desktop ยังไม่รองรับ Spotlight และ Slideshow
-
-ภาพล่าสุดเก็บ 4 ภาพที่เลือกสำเร็จ รวมภาพที่ใช้อยู่ และจำข้ามการปิดโปรแกรม กดรูปย่อเพื่อใช้สำเนาที่เก็บไว้ทันที</value>
+ใช้ภาพจอหลักจะนำภาพปัจจุบันจาก Windows มาใช้ ย้อนกลับภาพมีผลเฉพาะกลุ่มที่กำลังตั้งค่า และใช้ได้จนปิดโปรแกรม คลังภาพล่าสุด 4 ภาพใช้ร่วมกัน ภาพที่ทั้งสองกลุ่มกำลังใช้ยังเก็บสำเนาไว้ ค่านี้ใช้ร่วมกันทุก Virtual Desktop ไม่รองรับ Spotlight หรือ slideshow</value>
   </data>
   <data name="StartupHint">
     <value>เปิดโปรแกรมหลังลงชื่อเข้าใช้ Windows สำหรับบัญชีผู้ใช้นี้
@@ -251,7 +247,7 @@
   <data name="AboutTitle"><value>เกี่ยวกับ</value></data>
   <data name="AboutLink"><value>v{0} · เกี่ยวกับ</value></data>
   <data name="VersionLabel"><value>เวอร์ชัน</value></data>
-  <data name="AboutDescription"><value>แสดงภาพบน Windows Primary Display เพียงจอเดียว จออื่นที่ Extend เป็นสีดำ</value></data>
+  <data name="AboutDescription"><value>ภาพบนจอหลักของ Windows และอีกภาพหนึ่งร่วมกันบนจอรองทุกจอ หรือใช้สีดำ</value></data>
   <data name="DataFolderLabel"><value>โฟลเดอร์ settings ภาพที่เก็บไว้ และ log</value></data>
   <data name="GitHubReleases"><value>GitHub Releases</value></data>
   <data name="OpenDataFolder"><value>เปิดโฟลเดอร์ข้อมูล</value></data>
@@ -298,4 +294,12 @@
   <data name="ExportComplete" xml:space="preserve"><value>บันทึก ZIP สำหรับตรวจปัญหาแล้วที่:
 {0}</value></data>
   <data name="ExportFailed" xml:space="preserve"><value>ส่งออกข้อมูลไม่สำเร็จ กรุณาเลือกชื่อ ZIP ใหม่ในโฟลเดอร์ที่เขียนได้</value></data>
+  <data name="PrimaryDisplays" xml:space="preserve"><value>จอหลัก</value></data>
+  <data name="UseBlack" xml:space="preserve"><value>ใช้สีดำ</value></data>
+  <data name="SecondaryDisplays" xml:space="preserve"><value>จอรองทั้งหมด</value></data>
+  <data name="BlackDefault" xml:space="preserve"><value>สีดำ (ค่าเริ่มต้น)</value></data>
+  <data name="WallpaperFor" xml:space="preserve"><value>ภาพสำหรับ</value></data>
+  <data name="InvalidWallpaperTarget" xml:space="preserve"><value>เลือกจอหลักหรือจอรองทั้งหมด</value></data>
+  <data name="BlackHint" xml:space="preserve"><value>ใช้สีดำกับจอรองทุกจอ</value></data>
+  <data name="SecondaryImageSaved" xml:space="preserve"><value>บันทึกภาพสำหรับจอรองทั้งหมดแล้ว รวมถึงจอที่จะต่อเพิ่มภายหลัง</value></data>
 </root>

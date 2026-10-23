@@ -66,7 +66,13 @@ internal sealed class RecentImageStrip : TableLayoutPanel
                 if (i >= entries.Length) continue;
                 try
                 {
-                    button.BackgroundImage = CreateThumbnail(read(entries[i]));
+                    if (entries[i].PhotoFile.Length == 0)
+                    {
+                        var black = new Bitmap(200, 88);
+                        using (var graphics = Graphics.FromImage(black)) graphics.Clear(Color.Black);
+                        button.BackgroundImage = black;
+                    }
+                    else button.BackgroundImage = CreateThumbnail(read(entries[i]));
                     button.Enabled = true;
                 }
                 catch (Exception error) when (error is UiMessageException or ArgumentException or OutOfMemoryException) { }
@@ -101,7 +107,7 @@ internal sealed class RecentImageStrip : TableLayoutPanel
         language = value;
         heading.Text = UiText.T("RecentImages", language);
         empty.Text = UiText.T("ChooseImageFirst", language);
-        filename.Text = entries.FirstOrDefault() is { } first ? first.Label ?? Path.GetFileName(first.PhotoFile) : "";
+        filename.Text = entries.FirstOrDefault(entry => entry.Sha256.Equals(currentHash, StringComparison.OrdinalIgnoreCase)) is { } first ? first.PhotoFile.Length == 0 ? UiText.T("BlackDefault", language) : first.Label ?? Path.GetFileName(first.PhotoFile) : "";
         MeasureRows();
         filename.AccessibleName = UiText.T("RecentCurrent", language) + ": " + filename.Text;
         tips.SetToolTip(filename, filename.Text);
@@ -109,13 +115,13 @@ internal sealed class RecentImageStrip : TableLayoutPanel
         {
             var button = buttons[i];
             var entry = entries[i];
-            var label = entry.Label ?? Path.GetFileName(entry.PhotoFile);
+            var label = entry.PhotoFile.Length == 0 ? UiText.T("BlackDefault", language) : entry.Label ?? Path.GetFileName(entry.PhotoFile);
             var isCurrent = entry.Sha256.Equals(currentHash, StringComparison.OrdinalIgnoreCase);
             button.Tag = isCurrent;
             var description = UiText.T("RecentImageChoice", language, i + 1, label) +
                 (isCurrent ? " · " + UiText.T("RecentCurrent", language) : "");
             button.AccessibleName = description;
-            button.AccessibleDescription = UiText.T(button.BackgroundImage is null ? "RecentImageUnavailable" : "RecentImageHint", language);
+            button.AccessibleDescription = UiText.T(entry.PhotoFile.Length == 0 ? "BlackHint" : button.BackgroundImage is null ? "RecentImageUnavailable" : "RecentImageHint", language);
             button.Text = button.BackgroundImage is null ? UiText.T("RecentUnavailable", language) : "";
             button.ForeColor = Color.White;
             button.FlatAppearance.BorderSize = isCurrent ? 3 : 1;

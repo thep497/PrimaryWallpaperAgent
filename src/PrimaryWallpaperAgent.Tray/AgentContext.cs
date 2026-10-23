@@ -157,7 +157,7 @@ internal sealed class AgentContext : ApplicationContext
             if (smoke) { SetStatus("StatusReading", snapshot.Displays.Length); return; }
             while (repairs.TryPeek(out var time) && uptime.Elapsed - time >= TimeSpan.FromMinutes(1)) repairs.Dequeue();
             var needsRepair = TrialEngine.Active(snapshot).Any(w => !StringComparer.OrdinalIgnoreCase.Equals(
-                w.WallpaperPath, w.IsPrimary == true ? images.PhotoPath : images.BlackPath));
+                w.WallpaperPath, w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath));
             if (needsRepair && repairs.Count >= 8)
                 throw new PolicyConflictException("Wallpaper changed repeatedly (8 repairs in 60 seconds). Review the log before resuming.");
             var attempt = Guid.NewGuid().ToString("N");
@@ -258,7 +258,7 @@ internal sealed class AgentContext : ApplicationContext
                 try
                 {
                     liveSettings.Apply(request);
-                    AcceptSettingsChange(request.ApplyWallpaper, oldInterval);
+                    AcceptSettingsChange(liveSettings.LastChangeMayResume, oldInterval);
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
             }, OpenLog, config.Language, error => Log("CONFIG_UI_ERROR " + error), config.PollIntervalMs,
@@ -273,7 +273,18 @@ internal sealed class AgentContext : ApplicationContext
                 }
                 catch (Exception error) { ConfigurationFailed(error); throw; }
             }, canUndo: () => liveSettings.CanUndoImage, imageConfigured: () => config.HasChosenImage, dataRoot: store.Root, updates: updates,
-            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage, theme: config.Theme, themes: themes, reportLayout: Log);
+            recentImages: liveSettings.RecentImages, readRecentImage: liveSettings.ReadRecentImage, theme: config.Theme, themes: themes, reportLayout: Log,
+            roles: new(t => RecentImageHistory.Current(config, t), liveSettings.RecentImages, liveSettings.CanUndo, target =>
+            {
+                var oldInterval = config.PollIntervalMs;
+                try
+                {
+                    var image = liveSettings.UndoImage(target);
+                    AcceptSettingsChange(liveSettings.LastChangeMayResume, oldInterval);
+                    return image;
+                }
+                catch (Exception error) { ConfigurationFailed(error); throw; }
+            }, () => config.SecondaryImage is null));
             configForm = form;
             form.Load += (_, _) => form.BeginInvoke((Action)(() =>
                 Log("CONFIG_VISIBLE; nativeVisible=" + WindowPresentation.IsVisible(form))));

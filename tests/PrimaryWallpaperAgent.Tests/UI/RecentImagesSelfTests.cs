@@ -130,7 +130,7 @@ internal static class RecentImagesSelfTests
     {
         var desktop = new TrialSelfTests.FakeDesktop(3);
         desktop.State = desktop.State with { Wallpapers = desktop.State.Wallpapers.Select(w => w with
-            { WallpaperPath = w.IsPrimary == true ? store.Images(configured).PhotoPath : store.Images(configured).BlackPath }).ToArray() };
+            { WallpaperPath = w.IsPrimary == true ? store.Images(configured).PhotoPath : store.Images(configured).SecondaryPath }).ToArray() };
         using var context = new AgentContext(store, configured, store.Read(), false, true, desktop, startup);
         using var timer = new System.Windows.Forms.Timer { Interval = 50 };
         var elapsed = Stopwatch.StartNew();
@@ -175,7 +175,7 @@ internal static class RecentImagesSelfTests
                 else if (stage == 3 && status == UiText.T("StatusRunning", configured.Language, 3))
                 {
                     var images = store.Images(SettingsStore.Parse(store.Read()));
-                    if (!desktop.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.BlackPath))) return;
+                    if (!desktop.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath))) return;
                     stage = 4;
                     timer.Stop(); form.Close(); context.ExitThread();
                 }

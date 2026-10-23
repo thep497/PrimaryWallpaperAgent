@@ -91,7 +91,7 @@ internal static class HotplugSelfTests
                 }
                 bool Running(int count) => status == UiText.T("StatusRunning", "en", count) && Matches();
                 bool Matches() => TrialEngine.Active(desktop.State).All(w => w.WallpaperPath ==
-                    (w.IsPrimary == true ? images.PhotoPath : images.BlackPath));
+                    (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath));
             }
             catch (Exception error) { failure = error; timer.Stop(); context.ExitThread(); }
         };
@@ -187,7 +187,7 @@ internal static class HotplugSelfTests
 
         next = new TrialSelfTests.FakeDesktop(3) { State = ChangedSet(3, 2, "") };
         Assert(WallpaperPolicy.Repair(images, next.State, next, _ => { }, baseline), "A new monitor with no image receives policy");
-        Assert(next.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.BlackPath)), "Current primary determines targets");
+        Assert(next.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath)), "Current primary determines targets");
         next = new TrialSelfTests.FakeDesktop(5) { State = ChangedSet(5, 4, "remembered-five.jpg") };
         var detached = next.State.Wallpapers[0] with { MonitorId = "detached-cache", RectHResult = 1, WallpaperPath = "unrelated-cache.jpg" };
         next.State = next.State with { Wallpapers = next.State.Wallpapers.Append(detached).ToArray() };

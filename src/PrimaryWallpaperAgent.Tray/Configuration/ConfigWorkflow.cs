@@ -4,9 +4,9 @@ namespace PrimaryWallpaperAgent.Tray;
 
 internal static class ConfigWorkflow
 {
-    internal static void Apply(TrayConfig candidate, PolicyImages images, byte[] settingsAtOpen,
+    internal static bool Apply(TrayConfig candidate, PolicyImages images, byte[] settingsAtOpen,
         string? startupAtOpen, ISettingsPersistence settings, IStartupRegistration startup,
-        ITrialDesktop desktop, Action<string> log, Action<string, object> saveEvidence, bool applyWallpaper = true)
+        ITrialDesktop desktop, Action<string> log, Action<string, object> saveEvidence, bool applyWallpaper = true, WallpaperTarget target = WallpaperTarget.Primary, PolicyImages? previousImages = null)
     {
         if (!settings.Read().SequenceEqual(settingsAtOpen)) throw new UiMessageException("SettingsChanged");
         var desiredStartup = candidate.StartWithWindows ? startup.ExpectedCommand : null;
@@ -21,7 +21,16 @@ internal static class ConfigWorkflow
             try { before = desktop.Capture(); _ = TrialEngine.Active(before); }
             catch (Exception error) { throw new UiMessageException("DisplayReadFailed", error); }
             if (before.Position != 4 || before.SlideshowStatus != 1) throw new UiMessageException("PictureFillRequired");
-            plan = new(1, "config", images.PhotoPath, images.PhotoPath, images.PhotoSha256, images.BlackPath, images.BlackSha256, before);
+            // Editing secondaries never adopts/overwrites an unrelated Windows
+            // change on the primary, including when no secondary is connected.
+            var observedPrimary = TrialEngine.Active(before).Single(w => w.IsPrimary == true).WallpaperPath!;
+            var knownBefore = previousImages ?? images;
+            var trustedPrimary = knownBefore.AcceptedPaths.Concat([knownBefore.PhotoPath, knownBefore.SecondaryPath])
+                .Contains(observedPrimary, StringComparer.OrdinalIgnoreCase);
+            // A primary switch can still show the previous secondary picture.
+            // Rebase only a currently trusted picture; preserve unrelated choices.
+            var primaryPath = target == WallpaperTarget.Secondary && !trustedPrimary ? observedPrimary : images.PhotoPath;
+            plan = new(1, "config", primaryPath, primaryPath, images.PhotoSha256, images.SecondaryPath, images.SecondarySha256, before);
         }
         saveEvidence("settings-before", new { Config = SettingsStore.Parse(settingsAtOpen), OriginalBytesBase64 = Convert.ToBase64String(settingsAtOpen) });
         if (plan is not null) saveEvidence("plan-before", plan);
@@ -38,8 +47,15 @@ internal static class ConfigWorkflow
             if (!settings.Read().SequenceEqual(candidateBytes)) throw new UiMessageException("SettingsReadbackFailed");
             if (changeStartup) { startupAttempted = true; startup.Write(desiredStartup); }
             if (changeStartup && !StringComparer.Ordinal.Equals(startup.Read(), desiredStartup)) throw new UiMessageException("StartupReadbackFailed");
-            if (plan is not null) saveEvidence("state-after", desktop.Capture());
-            log((plan is null ? "CONFIG_PREFERENCES_SAVED; wallpaperTouched=False" : "CONFIG_APPLIED; wallpaper readback verified") + "; startupChanged=" + changeStartup);
+            var mayResume = false;
+            if (plan is not null)
+            {
+                var after = desktop.Capture(); saveEvidence("state-after", after);
+                mayResume = TrialEngine.Active(after).All(w => StringComparer.OrdinalIgnoreCase.Equals(w.WallpaperPath,
+                    w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath));
+            }
+            log((plan is null ? "CONFIG_PREFERENCES_SAVED; wallpaperTouched=False" : "CONFIG_APPLIED; wallpaper readback verified") + "; startupChanged=" + changeStartup + "; target=" + target + "; policyReady=" + mayResume);
+            return mayResume;
         }
         catch (Exception failure)
         {

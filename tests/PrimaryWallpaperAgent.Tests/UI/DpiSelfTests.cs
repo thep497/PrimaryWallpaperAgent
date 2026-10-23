@@ -26,8 +26,9 @@ internal static class DpiSelfTests
             form.ShowInTaskbar = false; form.Show(); Application.DoEvents();
             foreach (var dpi in new[] { 144, 192, 96, 120, 96 })
             {
-                                SetDpi(form, dpi);
-form.FitSettings("native-message-test"); Application.DoEvents();
+                SetDpi(form, dpi);
+                form.FitSettings("native-message-test"); Application.DoEvents();
+                Console.WriteLine(records.Last());
                 Assert(form.DeviceDpi == dpi, "Native DPI transition reached the fixture");
                 AssertControls(form);
                 if (dpi is 96 or 192)
@@ -104,6 +105,11 @@ form.FitSettings("native-message-test"); Application.DoEvents();
                 "Last preference remains reachable by scrolling");
             form.Height = startHeight; Application.DoEvents();
             Assert(!viewport.VerticalScroll.Visible, "Returning from minimum height clears the scrollbar");
+            form.Height = form.MinimumSize.Height; form.FitSettings("resize"); Application.DoEvents();
+            SetDpi(form, 192); form.FitSettings("user-sized-dpi"); Application.DoEvents();
+            Assert(form.ClientSize.Height < 900 && viewport.VerticalScroll.Visible, "DPI changes preserve a manually reduced viewport instead of growing it to full content");
+            SetDpi(form, 144); startHeight += 6; form.Height = startHeight; Application.DoEvents(); // Allow native DPI rounding of margins.
+            Assert(!viewport.VerticalScroll.Visible, "Restoring the original size after DPI changes fits content again");
             form.WindowState = FormWindowState.Minimized; Application.DoEvents();
             Assert(form.WindowState == FormWindowState.Minimized, "Live sizing permits minimizing");
             form.WindowState = FormWindowState.Normal; Application.DoEvents();
@@ -130,7 +136,7 @@ form.FitSettings("native-message-test"); Application.DoEvents();
         var client = form.RectangleToScreen(form.ClientRectangle);
         foreach (var control in Descendants(form).Where(c => c.Visible && c is Button or ComboBox or CheckBox))
         {
-            Assert(client.Contains(control.RectangleToScreen(control.ClientRectangle)), "Control remains inside client: " + control.Name);
+            Assert(client.Contains(control.RectangleToScreen(control.ClientRectangle)), "Control remains inside client: " + control.Name + "; dpi=" + form.DeviceDpi + "; bounds=" + control.RectangleToScreen(control.ClientRectangle) + "; form=" + client);
             if (control is ComboBox combo) Assert(combo.Width >= 160, "Selector width survives DPI round trips: " + combo.Name);
             if (control is Button button && !string.IsNullOrWhiteSpace(button.Text))
             {

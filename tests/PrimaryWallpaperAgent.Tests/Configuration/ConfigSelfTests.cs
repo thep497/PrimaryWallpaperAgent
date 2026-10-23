@@ -33,7 +33,7 @@ internal static class ConfigSelfTests
         var startup = new FakeStartup();
         ConfigWorkflow.Apply(candidate, images, bytes, null, store, startup, fake, _ => { }, (_, _) => { });
         Assert(SettingsStore.Parse(store.Read()).PhotoSha256 == selected.Sha256, "Save adopts the chosen image");
-        Assert(fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.BlackPath)), "Primary-only policy");
+        Assert(fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath)), "Primary-only policy");
         Assert(startup.Writes == 0, "Unchecked startup does not write registry");
         Assert(File.ReadAllBytes(next).SequenceEqual(selected.Bytes), "Original image unchanged");
 
@@ -46,7 +46,7 @@ internal static class ConfigSelfTests
             store, startup, fake, _ => { }, (_, _) => { });
         Assert(startup.Value is null && startup.Writes == 2, "Explicit startup opt-out");
 
-        Assert(candidate.SchemaVersion == 3 && candidate.AcceptedPaths.Length == 0 && candidate.CurrentSourcePath == next,
+        Assert(candidate.SchemaVersion == 4 && candidate.AcceptedPaths.Length == 0 && candidate.CurrentSourcePath == next,
             "Only the current source alias is retained");
         Assert(store.Images(initial).AcceptedPaths.Length == 0, "Legacy history is not automatically trusted on upgrade");
         var preview = SelectedImage.Read(store.Asset(candidate.PhotoFile, candidate.PhotoSha256));

@@ -33,6 +33,13 @@ internal sealed class ConfigForm : Form
     private readonly Func<RecentImage[]>? recentImages;
     private readonly Func<RecentImage, SelectedImage>? readRecentImage;
     private readonly RecentImageStrip recent = new();
+    private readonly WallpaperRoleActions? roles;
+    private WallpaperTarget target;
+    private readonly Dictionary<WallpaperTarget, SelectedImage> roleImages = [];
+    private bool secondaryBlack = true;
+    private readonly Label targetLabel = new() { AutoSize = true, Margin = new Padding(0, 7, 10, 0) };
+    private readonly Button primaryTarget = new() { Name = "WallpaperTargetPrimary", AutoSize = true, Padding = new Padding(8, 4, 8, 4) };
+    private readonly Button secondaryTarget = new() { Name = "WallpaperTargetSecondary", AutoSize = true, Padding = new Padding(8, 4, 8, 4) };
     private readonly SettingsSizing sizing;
     private readonly Action<string>? reportLayout;
     private readonly ThemeManager themes;
@@ -56,17 +63,23 @@ internal sealed class ConfigForm : Form
         string language = "th", Action<Exception>? reportError = null, int pollIntervalMs = PollingOptions.DefaultIntervalMs,
         Func<SelectedImage>? undoImage = null, Func<bool>? canUndo = null, Func<bool>? imageConfigured = null, string dataRoot = "", Action<string>? openAboutTarget = null, UpdateController? updates = null,
         Func<RecentImage[]>? recentImages = null, Func<RecentImage, SelectedImage>? readRecentImage = null,
-        string theme = "system", ThemeManager? themes = null, Action<string>? reportLayout = null, Func<Rectangle>? workingArea = null)
+        string theme = "system", ThemeManager? themes = null, Action<string>? reportLayout = null, Func<Rectangle>? workingArea = null, WallpaperRoleActions? roles = null)
     {
         SuspendLayout();
         selected = initial;
+        roleImages[WallpaperTarget.Primary] = roleImages[WallpaperTarget.Secondary] = initial;
+        this.roles = roles;
         this.reportLayout = reportLayout;
         committedTheme = ThemeOptions.Validate(theme);
         ownsThemes = themes is null;
         this.themes = themes ?? new ThemeManager(committedTheme);
         this.recentImages = recentImages;
         this.readRecentImage = readRecentImage;
-        recent.Chosen += entry => RunChange(() => ApplyImage(this.readRecentImage?.Invoke(entry) ?? selected), "ImageApplied");
+        recent.Chosen += entry =>
+        {
+            if (target == WallpaperTarget.Secondary && entry.PhotoFile.Length == 0) UseBlack();
+            else RunChange(() => ApplyImage(this.readRecentImage?.Invoke(entry) ?? selected), ImageSuccessKey);
+        };
         this.dataRoot = dataRoot;
         this.openAboutTarget = openAboutTarget;
         this.updates = updates;
@@ -113,7 +126,17 @@ internal sealed class ConfigForm : Form
         layout.Controls.Add(header, 0, 0);
         status.Height = Font.Height + 8;
         layout.Controls.Add(status, 0, 1);
-        layout.Controls.Add(recent, 0, 2);
+        var imageGroup = new TableLayoutPanel { Name = "WallpaperGroup", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top, ColumnCount = 1, RowCount = 2, Margin = Padding.Empty };
+        imageGroup.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        imageGroup.RowStyles.Add(new RowStyle(SizeType.AutoSize)); imageGroup.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        var targets = new FlowLayoutPanel { Name = "WallpaperTargets", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Dock = DockStyle.Top, WrapContents = false, Margin = new Padding(0, 0, 0, 8) };
+        targets.Controls.AddRange([targetLabel, primaryTarget, secondaryTarget]);
+        primaryTarget.Click += (_, _) => ChangeTarget(WallpaperTarget.Primary);
+        secondaryTarget.Click += (_, _) => ChangeTarget(WallpaperTarget.Secondary);
+        imageGroup.Controls.Add(targets, 0, 0); imageGroup.Controls.Add(recent, 0, 1);
+        layout.Controls.Add(imageGroup, 0, 2);
         var rowHeight = Font.Height + 16;
         var choose = new TableLayoutPanel { Name = "ImageActions", AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill,
             ColumnCount = 3, RowCount = 1, Margin = new Padding(0, 4, 0, 10) };
@@ -124,8 +147,8 @@ internal sealed class ConfigForm : Form
         browse.Dock = useCurrent.Dock = DockStyle.Fill;
         browse.MinimumSize = useCurrent.MinimumSize = new Size(0, rowHeight);
         browse.Click += (_, _) => Browse();
-        useCurrent.Click += (_, _) => SelectImage(currentPrimary, fromWindows: true);
-        undo.Click += (_, _) => RunChange(() => { selected = undoImage!(); ShowSelected(); }, "ImageUndone");
+        useCurrent.Click += (_, _) => { if (target == WallpaperTarget.Secondary) UseBlack(); else SelectImage(currentPrimary, fromWindows: true); };
+        undo.Click += (_, _) => RunChange(() => { selected = this.roles is null ? undoImage!() : this.roles.Undo(target); roleImages[target] = selected; ShowSelected(); }, "ImageUndone");
         choose.Controls.Add(browse, 0, 0);
         choose.Controls.Add(useCurrent, 1, 0);
         choose.Controls.Add(CreateHelpButton("ImageHelpButton", "ImageHelpTitle", "ImageHelpText"), 2, 0);
@@ -196,7 +219,7 @@ internal sealed class ConfigForm : Form
                 selector.MinimumSize = new Size(width, 0);
                 selector.Width = width;
             }
-            foreach (var button in helpTopics.Select(t => t.Button).Concat([browse, useCurrent, undo, close, log, errorDetails]))
+            foreach (var button in helpTopics.Select(t => t.Button).Concat([browse, useCurrent, undo, close, log, errorDetails, primaryTarget, secondaryTarget]))
             {
                 using var graphics = button.CreateGraphics();
                 var text = TextRenderer.MeasureText(graphics, button.Text, button.Font, new Size(10000, 10000), TextFormatFlags.SingleLine);
@@ -273,6 +296,14 @@ internal sealed class ConfigForm : Form
         string T(string key) => UiText.T(key, language);
         Text = UiText.Title("ConfigTitle", language);
         heading.Text = T("ConfigHeading");
+        targetLabel.Text = T("WallpaperFor"); primaryTarget.Text = T("PrimaryDisplays"); secondaryTarget.Text = T("SecondaryDisplays");
+        foreach (var button in new[] { primaryTarget, secondaryTarget })
+        {
+            var active = button == (target == WallpaperTarget.Primary ? primaryTarget : secondaryTarget);
+            button.Tag = active; button.FlatAppearance.BorderSize = active ? 2 : 1;
+            button.FlatAppearance.BorderColor = active ? themes.Palette.Accent : themes.Palette.Border;
+            button.AccessibleDescription = active ? T("RecentCurrent") : "";
+        }
         about.Text = UiText.T("AboutLink", language, AboutForm.VersionText);
         status.Text = statusText(language);
         languageLabel.Text = T("LanguageLabel");
@@ -301,7 +332,7 @@ internal sealed class ConfigForm : Form
         recent.SetLanguage(language);
         startup.Text = T("StartupCheck");
         browse.Text = T("Browse");
-        useCurrent.Text = T("UseCurrent");
+        useCurrent.Text = T(target == WallpaperTarget.Primary ? "UseCurrent" : "UseBlack");
         undo.Text = T("UndoImage");
         close.Text = T("Close");
         log.Text = T("ViewLog");
@@ -320,9 +351,9 @@ internal sealed class ConfigForm : Form
 
     private void UpdateEnabled()
     {
-        about.Enabled = recent.Enabled = !busy;
+        about.Enabled = recent.Enabled = primaryTarget.Enabled = secondaryTarget.Enabled = !busy;
         languageSelector.Enabled = themeSelector.Enabled = pollSelector.Enabled = startup.Enabled = browse.Enabled = useCurrent.Enabled = !busy;
-        undo.Enabled = !busy && undoImage is not null && canUndo?.Invoke() == true;
+        undo.Enabled = !busy && (roles?.CanUndo(target) ?? (target == WallpaperTarget.Primary && undoImage is not null && canUndo?.Invoke() == true));
         close.Enabled = !busy;
     }
 
@@ -342,23 +373,43 @@ internal sealed class ConfigForm : Form
         catch (UiMessageException) { throw; }
         catch (Exception error) { throw new UiMessageException("ImageReadFailed", error); }
         ApplyImage(next);
-    }, "ImageApplied");
+    }, ImageSuccessKey);
+
+    private string ImageSuccessKey => target == WallpaperTarget.Primary ? "ImageApplied" : "SecondaryImageSaved";
 
     private void ApplyImage(SelectedImage next)
     {
-        apply(new(next, committedStartup, language, true, committedPollIntervalMs, committedTheme));
-        selected = next;
+        apply(new(next, committedStartup, language, true, committedPollIntervalMs, committedTheme, target));
+        selected = next; roleImages[target] = next; if (target == WallpaperTarget.Secondary) secondaryBlack = false;
         ShowSelected();
     }
 
+    private void ChangeTarget(WallpaperTarget next)
+    {
+        if (busy || target == next) return;
+        roleImages[target] = selected; target = next; selected = roleImages[target];
+        lastError = null; feedbackKey = null;
+        ShowSelected(); ApplyTexts(); // Viewing a role never submits settings.
+    }
+    private void UseBlack() => RunChange(() =>
+    {
+        apply(new(selected, committedStartup, language, true, committedPollIntervalMs, committedTheme, WallpaperTarget.Secondary, UseBlack: true));
+        secondaryBlack = true; ShowSelected();
+    }, ImageSuccessKey);
     private void ShowSelected()
     {
-        RecentImage[] entries = imageConfigured?.Invoke() == false ? [] : recentImages?.Invoke() ??
-            [new RecentImage(selected.SourcePath, selected.Sha256, selected.FriendlyName)];
-        recent.SetImages(entries, selected.Sha256, language, readRecentImage ?? (_ => selected));
+        var isBlack = target == WallpaperTarget.Secondary && (roles?.SecondaryIsBlack() ?? secondaryBlack);
+        RecentImage[] entries = roles?.Recent(target) ?? (target == WallpaperTarget.Primary && imageConfigured?.Invoke() == false ? [] :
+            recentImages?.Invoke() ?? [new RecentImage(selected.SourcePath, selected.Sha256, selected.FriendlyName)]);
+        var currentHash = roles is null ? selected.Sha256 : roles.Selection(target)?.Sha256 ?? "";
+        if (isBlack)
+        {
+            entries = new[] { new RecentImage("", "") }.Concat(entries).Take(RecentImageHistory.Limit).ToArray();
+            currentHash = "";
+        }
+        recent.SetImages(entries, currentHash, language, readRecentImage ?? (_ => selected));
         recent.ApplyPalette(themes.Palette);
     }
-
     private void RunChange(Action action, string success, string fallback = "GenericError")
     {
         if (busy) return;

@@ -16,6 +16,7 @@ internal sealed class SettingsSizing : IDisposable
     private bool adjusting;
     private bool queued;
     private bool opened;
+    private bool fitHeight = true;
     internal Size RequiredClientSize { get; private set; }
 
     internal SettingsSizing(Form form, Control content, Control footer, Panel viewport,
@@ -24,11 +25,12 @@ internal sealed class SettingsSizing : IDisposable
         this.form = form; this.content = content; this.footer = footer; this.viewport = viewport;
         this.area = area ?? (() => Screen.FromControl(form).WorkingArea);
         this.measure = measure; this.report = report;
-        form.Load += Loaded; form.DpiChanged += DpiChanged; form.ResizeEnd += ResizeEnd; form.ClientSizeChanged += ClientSizeChanged;
+        form.Load += Loaded; form.DpiChanged += DpiChanged; form.ResizeEnd += ResizeEnd; form.ResizeBegin += ResizeBegin; form.ClientSizeChanged += ClientSizeChanged;
         SystemEvents.DisplaySettingsChanged += DisplayChanged;
     }
     private void Loaded(object? sender, EventArgs e) => Refresh("open");
     private void DpiChanged(object? sender, DpiChangedEventArgs e) => Queue("dpi-change");
+    private void ResizeBegin(object? sender, EventArgs e) => fitHeight = false;
     private void ResizeEnd(object? sender, EventArgs e) => Refresh("resize");
     private void ClientSizeChanged(object? sender, EventArgs e) { if (opened && form.Visible) Refresh("resize-live"); }
     private void DisplayChanged(object? sender, EventArgs e) => Queue("display-change");
@@ -48,6 +50,7 @@ internal sealed class SettingsSizing : IDisposable
         adjusting = true;
         try
         {
+            if (reason == "resize") fitHeight = false;
             var work = area();
             if (work.Width < 100 || work.Height < 100) return;
             measure?.Invoke();
@@ -64,7 +67,7 @@ internal sealed class SettingsSizing : IDisposable
             // content. Fit once on open; subsequent resizes belong to the user.
             var minimumHeight = Math.Min(maxClient.Height, (int)Math.Ceiling(320d * form.DeviceDpi / 96));
             form.MinimumSize = new Size(minimumWidth + chrome.Width, minimumHeight + chrome.Height);
-            var height = !opened && reason == "open" ? needed : form.ClientSize.Height;
+            var height = (!opened && reason == "open") || (fitHeight && reason is "dpi-change" or "display-change") ? needed : form.ClientSize.Height;
             form.ClientSize = new Size(width, Math.Clamp(height, minimumHeight, maxClient.Height));
             opened = true;
             viewport.AutoScroll = needed > form.ClientSize.Height;
@@ -84,6 +87,6 @@ internal sealed class SettingsSizing : IDisposable
     public void Dispose()
     {
         SystemEvents.DisplaySettingsChanged -= DisplayChanged;
-        form.Load -= Loaded; form.DpiChanged -= DpiChanged; form.ResizeEnd -= ResizeEnd; form.ClientSizeChanged -= ClientSizeChanged;
+        form.Load -= Loaded; form.DpiChanged -= DpiChanged; form.ResizeEnd -= ResizeEnd; form.ResizeBegin -= ResizeBegin; form.ClientSizeChanged -= ClientSizeChanged;
     }
 }

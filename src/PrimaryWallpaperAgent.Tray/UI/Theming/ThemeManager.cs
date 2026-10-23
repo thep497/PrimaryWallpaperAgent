@@ -110,6 +110,11 @@ internal sealed class ThemeManager : IDisposable
                 button.FlatAppearance.MouseOverBackColor = p.Hover;
                 button.FlatAppearance.MouseDownBackColor = p.Hover;
                 button.BackColor = p.Surface;
+                if (button.Name.StartsWith("WallpaperTarget", StringComparison.Ordinal))
+                {
+                    button.FlatAppearance.BorderSize = button.Tag is true ? 2 : 1;
+                    button.FlatAppearance.BorderColor = button.Tag is true ? p.Accent : p.Border;
+                }
                 if (button.Name.StartsWith("RecentImage", StringComparison.Ordinal))
                 {
                     button.BackColor = Color.FromArgb(25, 29, 36);

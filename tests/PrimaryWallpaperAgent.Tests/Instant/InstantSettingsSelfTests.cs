@@ -39,7 +39,7 @@ internal static class InstantSettingsSelfTests
                 Assert(fixture.Live.Config.Language == "en" && Find<ComboBox>(reopened, "PollSelector").SelectedIndex == 3, "Close/reopen retains edits");
                 Assert(Find<Button>(reopened, "UndoImageButton").Enabled, "Undo survives window close/reopen");
                 var bytes = fixture.Store.Read();
-                fixture.Desktop.Fake.FailOnCall = fixture.Desktop.Fake.Calls + 2;
+                fixture.Desktop.Fake.FailOnCall = fixture.Desktop.Fake.Calls + 1; // Only the changed primary now needs a setter.
                 Find<Button>(reopened, "UndoImageButton").PerformClick();
                 Assert(fixture.Live.CanUndoImage && fixture.Store.Read().SequenceEqual(bytes), "Failed undo preserves previous settings and undo availability");
                 Assert(Find<Label>(reopened, "ImageFilename").Text == fixture.A.FriendlyName, "Failed undo keeps current preview");
@@ -49,7 +49,7 @@ internal static class InstantSettingsSelfTests
                 Assert(fixture.Live.Config.Language == "en" && fixture.Live.Config.PollIntervalMs == 5000 &&
                     fixture.Live.Config.StartWithWindows && fixture.Startup.Value == fixture.Startup.ExpectedCommand,
                     "Undo preserves later preferences and startup");
-                Assert(fixture.Desktop.Fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? fixture.Live.Images.PhotoPath : fixture.Live.Images.BlackPath)), "Undo obeys current-primary policy");
+                Assert(fixture.Desktop.Fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? fixture.Live.Images.PhotoPath : fixture.Live.Images.SecondaryPath)), "Undo obeys current-primary policy");
                 Assert(SelectedImage.Read(fixture.A.SourcePath).Bytes.SequenceEqual(fixture.A.Bytes) && SelectedImage.Read(fixture.B.SourcePath).Bytes.SequenceEqual(fixture.B.Bytes), "Source images unchanged");
             }
         }
@@ -126,7 +126,7 @@ internal static class InstantSettingsSelfTests
                     toggle.PerformClick();
                 }
                 else if (stage == 1 && fixture.Desktop.Fake.Calls > writesBeforeSwitch &&
-                    fixture.Desktop.Fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? fixture.Live.Images.PhotoPath : fixture.Live.Images.BlackPath)))
+                    fixture.Desktop.Fake.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? fixture.Live.Images.PhotoPath : fixture.Live.Images.SecondaryPath)))
                 {
                     Assert(form.Visible, "Config remains open during primary-follow repair");
                     Assert(fixture.Startup.Writes == 0, "Agent integration used no startup writes");

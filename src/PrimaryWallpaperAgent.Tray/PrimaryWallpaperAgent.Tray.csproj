@@ -4,11 +4,11 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
-    <Version>0.4.5</Version>
+    <Version>0.5.0</Version>
     <DistributionFlavor Condition="'$(DistributionFlavor)' == ''">full</DistributionFlavor>
     <AssemblyTitle>Primary Wallpaper Agent</AssemblyTitle>
     <Product>Primary Wallpaper Agent</Product>
-    <Description>Show wallpaper on the primary display and keep other displays black.</Description>
+    <Description>Use a primary wallpaper and a shared secondary wallpaper, with black as the default.</Description>
     <ApplicationIcon>../../assets/branding/Application.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
