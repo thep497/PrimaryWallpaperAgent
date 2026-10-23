@@ -6,7 +6,7 @@ A Windows 11 tray app that keeps a picture on the current Windows primary displa
 
 ## Download and first launch
 
-Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.5.0 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
+Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.5.1 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
 
 1. Keep the EXE in a permanent local folder. Exit any older running instance before launching it.
 2. Set Windows background to **Picture** and fit to **Fill**. Spotlight/slideshow are not supported.
@@ -67,7 +67,11 @@ The same primary/secondary selections are shared across Windows Virtual Desktops
 
 Settings edits **Primary display / All secondary displays** using the same image strip. All secondaries share one picture or black; pictures follow Windows primary/secondary roles when displays are switched, connected or removed. The library is shared and Undo is separate for each role. Secondary pictures may be prepared with one monitor connected or before selecting the first primary; the watcher stays inactive until a primary picture is explicitly selected.
 
-Older settings open with the existing primary and black secondary default. The first image edit upgrades settings to schema 4 and saves the exact pre-upgrade settings as **settings-before-schema4.json** beside settings.json. This backup is not rotated or included in support ZIPs. **v0.4.5 and earlier cannot read schema 4**: to downgrade, exit the app, preserve the new settings separately and restore the pre-upgrade backup as settings.json. See [compatibility, verification and role checks](docs/testing/SECONDARY-WALLPAPER-TEST.md).
+Older settings open with the existing primary and black secondary default. The first image edit writes schema 4 and saves the exact pre-upgrade settings as **settings-before-schema4.json** beside settings.json. This backup is not rotated or included in support ZIPs.
+
+Starting with **v0.5.1**, a newer positive settings schema or extra JSON fields do not block startup. Missing optional settings use defaults; unrecognized theme/check-interval choices use System/1 second. Opening alone leaves settings bytes intact. The next explicit settings edit writes the current reader's schema and known fields, so newer fields may be lost; returning to a newer app restores defaults rather than the lost selections. Malformed JSON, incompatible types for known fields and invalid/missing cached images still report errors. This applies to wallpaper settings.json, not the signed updater manifest or update preferences.
+
+Already distributed **v0.4.5 and earlier still reject schema 4**. For those EXEs, exit the app, preserve the new settings separately and restore the pre-upgrade backup as settings.json. See [config compatibility checks](docs/testing/CONFIG-COMPATIBILITY-TEST.md) and [role checks](docs/testing/SECONDARY-WALLPAPER-TEST.md).
 
 ## New monitor recovery
 
@@ -97,7 +101,7 @@ Build and verify a distributable EXE:
 .\scripts\Test-Release.ps1
 ```
 
-Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.5.0/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
+Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.5.1/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
 
 Publish-Tray.ps1 and Start-WallpaperTray.ps1 remain legacy helpers for the private trial package, rather than public installation steps.
 
@@ -114,7 +118,7 @@ Probe exit 0 means complete; 1 means fatal; 2 means some API entries were unread
 - src/PrimaryWallpaperAgent.Core — display APIs, policy and engine.
 - src/PrimaryWallpaperAgent.Tray — tray, Settings, first-run and persistence.
 - src/PrimaryWallpaperAgent.Probe — read-only console and explicit diagnostics.
-- tests/PrimaryWallpaperAgent.Tests — 18 automated suites.
+- tests/PrimaryWallpaperAgent.Tests — 19 automated suites.
 - scripts — build, test, publish and diagnostics.
 - assets/branding — icons and reproducible source artwork.
 - docs/development and docs/testing — implementation and evidence.
@@ -126,7 +130,7 @@ Private settings, photos, monitor snapshots and trial plans are excluded from so
 
 The user previously verified primary switching, hotplug 3→1→3 and policy persistence across Virtual Desktops. On 20 October the user reported normal launch and expected wallpaper behavior. Detailed scenario results are still being collected. Physical-console mapping/recovery, projector, more than three physical displays, DPI transitions and startup after logon still need validation. Tests with 1/3/5 simulated displays do not establish hardware results.
 
-- [v0.5.0 release notes](docs/releases/v0.5.0.md)
+- [v0.5.1 release notes](docs/releases/v0.5.1.md)
 - [App themes and compact image selection](docs/testing/THEME-TEST.md)
 - [Recent picture recovery](docs/testing/RECENT-IMAGES-TEST.md)
 - [Deployment and startup](docs/development/DEPLOYMENT.md)

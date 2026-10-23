@@ -46,6 +46,7 @@ internal interface ISettingsPersistence
 
 internal sealed class SettingsStore(string root) : ISettingsPersistence
 {
+    internal const int CurrentSchemaVersion = 4;
     internal string Root { get; } = Path.GetFullPath(root);
     internal static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     public byte[] Read() => File.ReadAllBytes(Path.Combine(Root, "settings.json"));
@@ -53,18 +54,24 @@ internal sealed class SettingsStore(string root) : ISettingsPersistence
     {
         var offset = bytes.AsSpan().StartsWith(new byte[] { 0xEF, 0xBB, 0xBF }) ? 3 : 0;
         var config = JsonSerializer.Deserialize<TrayConfig>(bytes.AsSpan(offset)) ?? throw new UiMessageException("InvalidSettings");
-        if (config.SchemaVersion is not (1 or 2 or 3 or 4) || config.AcceptedPaths is null ||
+        if (config.SchemaVersion < 1 || config.AcceptedPaths is null ||
             config.AcceptedPaths.Any(string.IsNullOrWhiteSpace)) throw new UiMessageException("InvalidSettings");
         if (config.RecentImages is { } recent && (recent.Length > RecentImageHistory.Limit ||
             recent.Any(image => image is null || string.IsNullOrWhiteSpace(image.PhotoFile) ||
                 string.IsNullOrWhiteSpace(image.Sha256) || image.Sha256.Length != 64 || !image.Sha256.All(Uri.IsHexDigit))))
             throw new UiMessageException("InvalidSettings");
-        if (config.SecondaryImage is { } secondary && (config.SchemaVersion < 4 ||
-            string.IsNullOrWhiteSpace(secondary.PhotoFile) || !ValidHash(secondary.Sha256)))
+        if (config.SecondaryImage is { } secondary && (string.IsNullOrWhiteSpace(secondary.PhotoFile) || !ValidHash(secondary.Sha256)))
             throw new UiMessageException("InvalidSettings");
-        _ = ThemeOptions.Validate(config.Theme);
-        _ = PollingOptions.Validate(config.PollIntervalMs);
-        return config with { Language = UiText.Normalize(config.Language) };
+        // Schema is a format marker, not an upper-version gate. Read known fields
+        // from newer files; opening never rewrites them. The next explicit edit
+        // saves this reader's schema/fields and may discard newer preferences.
+        return config with
+        {
+            SchemaVersion = Math.Min(config.SchemaVersion, CurrentSchemaVersion),
+            Language = UiText.Normalize(config.Language),
+            Theme = ThemeOptions.Supported.Contains(config.Theme) ? config.Theme : "system",
+            PollIntervalMs = PollingOptions.IsSupported(config.PollIntervalMs) ? config.PollIntervalMs : PollingOptions.DefaultIntervalMs
+        };
     }
     internal string Asset(string relative, string expectedHash)
     {

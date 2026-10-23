@@ -30,8 +30,10 @@ internal static class ThemeSelfTests
         legacy.Remove("Theme");
         Assert(SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(legacy)).Theme == "system", "Old settings default to System");
         var invalid = live.Config with { Theme = "unsupported" };
-        try { SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(invalid)); throw new Exception("Expected invalid theme"); }
-        catch (UiMessageException error) { Assert(error.Key == "InvalidTheme", "Invalid preference rejected"); }
+        Assert(SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(invalid)).Theme == "system",
+            "Unrecognized saved theme falls back to System");
+        try { ThemeOptions.Validate(invalid.Theme); throw new Exception("Expected invalid UI theme"); }
+        catch (UiMessageException error) { Assert(error.Key == "InvalidTheme", "New UI requests remain validated"); }
         foreach (var palette in new[] { ThemePalette.Light, ThemePalette.Night })
         {
             Assert(Contrast(palette.Background, palette.Text) >= 7, "Body text contrast");

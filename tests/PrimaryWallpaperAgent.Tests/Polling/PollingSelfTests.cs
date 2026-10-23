@@ -25,8 +25,10 @@ internal static class PollingSelfTests
         {
             var node = JsonNode.Parse(store.Read())!.AsObject();
             node["PollIntervalMs"] = invalid;
-            try { _ = SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(node)); throw new Exception("Invalid interval accepted"); }
-            catch (UiMessageException error) { Assert(error.Key == "InvalidPollInterval", "Invalid interval fails before timer startup"); }
+            Assert(SettingsStore.Parse(JsonSerializer.SerializeToUtf8Bytes(node)).PollIntervalMs == PollingOptions.DefaultIntervalMs,
+                "Unrecognized saved interval falls back before timer startup");
+            try { PollingOptions.Validate(invalid); throw new Exception("Invalid UI interval accepted"); }
+            catch (UiMessageException error) { Assert(error.Key == "InvalidPollInterval", "New UI requests remain validated"); }
         }
 
         var desktop = new ForbiddenDesktop();

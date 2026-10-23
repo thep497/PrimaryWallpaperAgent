@@ -32,3 +32,5 @@
 - [Central logs, support export and Settings DPI](LOGGING-DPI-TEST.md)
 
 - [Primary / shared secondary wallpaper review](SECONDARY-WALLPAPER-TEST.md)
+
+- [Config compatibility and downgrade defaults](CONFIG-COMPATIBILITY-TEST.md)
