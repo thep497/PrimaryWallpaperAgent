@@ -31,6 +31,7 @@ internal static class Program
                 ["recent"] => RecentImagesSelfTests.Run(),
                 ["theme"] => ThemeSelfTests.Run(),
                 ["hotplug"] => HotplugSelfTests.Run(),
+                ["recovery"] => RecoverySelfTests.Run(),
                 ["diagnostics"] => DiagnosticsSelfTests.Run(),
                 ["export-fixture", var root, var destination] => DiagnosticsSelfTests.ExportFixture(root, destination),
                 ["dpi"] => DpiSelfTests.Run(),
@@ -55,7 +56,7 @@ internal static class Program
     }
     private static int Usage()
     {
-        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|config|compatibility|window|localization|polling|branding|instant|compact|recent|theme|hotplug|diagnostics|dpi|release|maintenance|instance|update>");
+        Console.WriteLine("PrimaryWallpaperAgent.Tests <policy|secondary|config|compatibility|window|localization|polling|branding|instant|compact|recent|theme|hotplug|recovery|diagnostics|dpi|release|maintenance|instance|update>");
         Console.WriteLine("Fake desktop/startup backends; window tests display only our fixture form.");
         return 2;
     }

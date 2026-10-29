@@ -40,7 +40,7 @@ internal static class HotplugSelfTests
             try
             {
                 var status = context.TrayMenu.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "StatusItem").Text;
-                if (clock.Elapsed.TotalSeconds > 20)
+                if (clock.Elapsed.TotalSeconds > 45)
                     throw new InvalidOperationException("Watcher timed out at stage " + stage + "; status=" + status);
                 if (stage < 5 && status == UiText.T("StatusPausedNew", "en"))
                     throw new InvalidOperationException("Hotplug incorrectly requested a new image at stage " + stage);
@@ -81,15 +81,15 @@ internal static class HotplugSelfTests
                     desktop.State = WithWallpaper(desktop.State, "user-manual-choice.jpg");
                     stage = 5;
                 }
-                else if (stage == 5 && status == UiText.T("StatusPausedNew", "en"))
+                else if (stage == 5 && status == UiText.T("StatusRetry", "en"))
                 {
                     Assert(desktop.Calls == writesBeforeManual && desktop.State.Wallpapers.All(w => w.WallpaperPath == "user-manual-choice.jpg"),
-                        "Unchanged display set still preserves manual image changes");
+                        "Unreadable primary is preserved while the watcher retries automatically");
                     Assert(Application.OpenForms.OfType<ConfigForm>().Count() == 0, "Hotplug needs no Settings interaction");
                     stage = 6;
                     timer.Stop(); context.ExitThread();
                 }
-                bool Running(int count) => status == UiText.T("StatusRunning", "en", count) && Matches();
+                bool Running(int count) => status == UiText.T("StatusRunning", "en", count) && Matches() && !context.IsDisplayTransition;
                 bool Matches() => TrialEngine.Active(desktop.State).All(w => w.WallpaperPath ==
                     (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath));
             }
@@ -109,9 +109,9 @@ internal static class HotplugSelfTests
         File.WriteAllText(Path.Combine(folder, "result.json"), JsonSerializer.Serialize(new
         {
             Passed = true, NativeWallpaperCalls = 0, StartupWrites = 0, SettingsUnchanged = true,
-            Tests = "observed monitor changes, 1-3-1-3, same-count replacement, current primary, manual wallpaper pause, mode/mapping/session guards"
+            Tests = "observed monitor changes, 1-3-1-3, same-count replacement, current primary, unreadable-primary retry; strict policy boundary fixtures"
         }, SettingsStore.JsonOptions));
-        Console.WriteLine("HOTPLUG TESTS PASSED: Windows-restored unfamiliar images on observed monitor changes; 1-3-1-3, replacement, current primary and unchanged-set manual-image pause.");
+        Console.WriteLine("HOTPLUG TESTS PASSED: Windows-restored unfamiliar images on observed monitor changes; 1-3-1-3, replacement, current primary and unreadable-primary retry.");
         Console.WriteLine("Evidence: " + folder);
         return 0;
     }

@@ -121,7 +121,7 @@ internal static class RecentImagesSelfTests
         File.WriteAllText(Path.Combine(root, "result.json"), JsonSerializer.Serialize(new { Passed = true,
             Tests = "bounded/deduplicated persisted history, cache-only recovery, rollback, missing/corrupt sources, bilingual compact UI, paused 3-to-1-to-3 recovery",
             NativeWallpaperCalls = 0, RegistryWrites = 0 }, SettingsStore.JsonOptions));
-        Console.WriteLine("RECENT IMAGES TESTS PASSED: four cached choices across restart, ordering, rollback, missing Windows cache, tamper protection, compact Thai/English UI and paused session recovery.");
+        Console.WriteLine("RECENT IMAGES TESTS PASSED: four cached choices across restart, ordering, rollback, missing Windows cache, tamper protection, compact Thai/English UI and retrying session recovery.");
         Console.WriteLine("Evidence: " + root);
         return 0;
     }
@@ -141,27 +141,34 @@ internal static class RecentImagesSelfTests
             var form = Application.OpenForms.OfType<ConfigForm>().SingleOrDefault();
             try
             {
-                if (elapsed.Elapsed.TotalSeconds > 15) throw new InvalidOperationException("Session recovery timed out at stage " + stage);
+                if (elapsed.Elapsed.TotalSeconds > 30) throw new InvalidOperationException("Session recovery timed out at stage " + stage);
                 if (form is null) return;
                 var status = context.TrayMenu.Items.OfType<ToolStripMenuItem>().Single(item => item.Name == "StatusItem").Text;
-                if (stage == 0)
+                if (stage == 0 && status == UiText.T("StatusRunning", configured.Language, 3))
                 {
                     var one = new TrialSelfTests.FakeDesktop(1).State;
-                    desktop.State = one with { Wallpapers = one.Wallpapers.Select(w => w with { WallpaperPath = Path.Combine(root, "gone-cache", "image.jpg") }).ToArray() };
+                    desktop.State = one with { Wallpapers = one.Wallpapers.Select(w => w with
+                        { WallpaperPath = store.Images(configured).PhotoPath }).ToArray() };
                     stage = 1;
                 }
-                else if (stage == 1 && status == UiText.T("StatusPausedNew", configured.Language))
+                else if (stage == 1 && status == UiText.T("StatusRunning", configured.Language, 1) && !context.IsDisplayTransition)
+                {
+                    desktop.State = desktop.State with { Wallpapers = desktop.State.Wallpapers.Select(w => w with
+                        { WallpaperPath = Path.Combine(root, "gone-cache", "image.jpg") }).ToArray() };
+                    stage = 2;
+                }
+                else if (stage == 2 && status == UiText.T("StatusRetry", configured.Language))
                 {
                     var before = store.Read();
                     Find<Button>(form, "UseCurrentButton").PerformClick();
                     Assert(Find<Label>(form, "FeedbackLabel").Text == UiText.T("WindowsImageUnavailable", configured.Language) &&
-                        store.Read().SequenceEqual(before), "Actual paused agent reproduces missing-cache UI failure");
+                        store.Read().SequenceEqual(before), "Retrying agent preserves settings after missing-cache UI failure");
                     Find<Button>(form, "RecentImage0").PerformClick();
                     Assert(desktop.State.Wallpapers.Single().WallpaperPath == store.Images(SettingsStore.Parse(store.Read())).PhotoPath,
                         "Explicit cached choice recovers one display");
-                    stage = 2;
+                    stage = 3;
                 }
-                else if (stage == 2 && status == UiText.T("StatusRunning", configured.Language, 1))
+                else if (stage == 3 && status == UiText.T("StatusRunning", configured.Language, 1))
                 {
                     var three = new TrialSelfTests.FakeDesktop(3).State;
                     var photo = store.Images(SettingsStore.Parse(store.Read())).PhotoPath;
@@ -170,13 +177,13 @@ internal static class RecentImagesSelfTests
                         Displays = three.Displays.Select((d, i) => d with { IsPrimary = i == 2 }).ToArray(),
                         Wallpapers = three.Wallpapers.Select((w, i) => w with { IsPrimary = i == 2, WallpaperPath = photo }).ToArray()
                     };
-                    stage = 3;
+                    stage = 4;
                 }
-                else if (stage == 3 && status == UiText.T("StatusRunning", configured.Language, 3))
+                else if (stage == 4 && status == UiText.T("StatusRunning", configured.Language, 3))
                 {
                     var images = store.Images(SettingsStore.Parse(store.Read()));
                     if (!desktop.State.Wallpapers.All(w => w.WallpaperPath == (w.IsPrimary == true ? images.PhotoPath : images.SecondaryPath))) return;
-                    stage = 4;
+                    stage = 5;
                     timer.Stop(); form.Close(); context.ExitThread();
                 }
             }
@@ -184,8 +191,8 @@ internal static class RecentImagesSelfTests
         };
         timer.Start();
         Application.Run(context);
-        if (failure is not null) throw new InvalidOperationException("Paused session recovery failed", failure);
-        Assert(stage == 4, "Cached choice resumes policy and follows three displays/new primary");
+        if (failure is not null) throw new InvalidOperationException("Retrying session recovery failed", failure);
+        Assert(stage == 5, "Cached choice recovers policy and follows three displays/new primary");
     }
 
     private static ConfigForm OpenForm(LiveSettings live, string language, Size size, string windowsPath)

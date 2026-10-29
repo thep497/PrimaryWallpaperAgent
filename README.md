@@ -6,7 +6,7 @@ A Windows 11 tray app that keeps a picture on the current Windows primary displa
 
 ## Download and first launch
 
-Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.5.1 packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
+Choose **PrimaryWallpaperAgent-Full-win-x64.exe** (recommended, includes runtime) or **PrimaryWallpaperAgent-Slim-win-x64.exe** (requires .NET 10 Windows Desktop Runtime x64) from [GitHub Releases](https://github.com/thep497/PrimaryWallpaperAgent/releases). Both v0.5.2 Preview packages are **Windows x64** single-file apps. Full needs no separate .NET installation. Slim uses the compatible installed desktop runtime.
 
 1. Keep the EXE in a permanent local folder. Exit any older running instance before launching it.
 2. Set Windows background to **Picture** and fit to **Fill**. Spotlight/slideshow are not supported.
@@ -52,7 +52,7 @@ New installations create settings, cached images and logs in **%LOCALAPPDATA%\Pr
 
 Older installations with settings.json beside the EXE continue using that folder. No silent migration or import of private trial assets occurs. Exit keeps the current wallpaper assignments.
 
-The same primary/secondary selections are shared across Windows Virtual Desktops. Unknown wallpaper changes pause the agent for explicit adoption through Settings. Changing the image in Windows alone does not automatically adopt it.
+The same primary/secondary selections are shared across Windows Virtual Desktops. Starting with v0.5.2, a readable new picture on the settled Windows primary is imported automatically as the primary role's new picture, with a verified cached copy. The image follows the primary role when displays are switched. Set the secondary picture only in this app: Windows-only changes on secondaries are replaced with the app's shared secondary picture or black. Setting one picture for all displays in Windows imports the primary picture and restores the app's secondary choice on all secondaries.
 
 ## Uninstall
 
@@ -75,7 +75,11 @@ Already distributed **v0.4.5 and earlier still reject schema 4**. For those EXEs
 
 ## New monitor recovery
 
-The agent distinguishes an observed change of active monitors from an unfamiliar wallpaper on an unchanged monitor set. After complete, stable display samples, connecting/removing/replacing a monitor can restore the saved primary and secondary assignments automatically, even when Windows returns remembered wallpaper paths. Unfamiliar wallpaper on the unchanged monitor set still pauses for an explicit choice. A cold start has no remembered monitor baseline. See [new-monitor recovery and remaining physical checks](docs/testing/NEW-MONITOR-TEST.md).
+The v0.5.2 watcher tracks primary-role changes as well as connections, removals, replacements, resolution changes and session changes. It waits for complete matching samples and a quiet period before restoring saved role images. It keeps the transition open until the repaired assignments settle, so a delayed remembered picture during that transition is not imported as a new primary. Equal image bytes under another path are accepted without changing settings; changed bytes at the same external path are observed too.
+
+Mapping and setter failures retry with backoff capped at 30 seconds, rather than latching Pause. Eight repairs in a rolling minute cause a temporary cooldown, followed by automatic retry. Unsupported modes are preserved while the watcher waits; it does not force Picture/Fill. Manual Pause remains paused until Resume. Events, attempts and recovery snapshots use the existing bounded logs and diagnostics export.
+
+Windows observations do not identify who changed a picture. A primary change during an observed display transition is treated as transition recovery; after that transition settles, a stable new primary picture is imported. A cold start has no prior monitor baseline. Different pictures on separate Windows Virtual Desktops are not stored independently by this app. See [automatic recovery behavior and checks](docs/testing/AUTO-RECOVERY-TEST.md); earlier [new-monitor checks](docs/testing/NEW-MONITOR-TEST.md) remain historical evidence.
 
 ## Diagnostics and DPI changes
 
@@ -101,7 +105,7 @@ Build and verify a distributable EXE:
 .\scripts\Test-Release.ps1
 ```
 
-Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.5.1/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
+Output: Full/Slim EXEs, signed update-manifest.json/update-manifest.sig and SHA256SUMS.txt under artifacts/releases/v0.5.2/win-x64/. Publish requires the existing local DPAPI update-signing key matching the public key in assets/updates. It downloads Microsoft runtime packs from nuget.org into ignored .local/release-nuget. The development build restores the pinned Serilog/file sink packages from nuget.org into the same private cache. Global NuGet sources and PATH remain unchanged. The script refuses to overwrite an existing release destination.
 
 Publish-Tray.ps1 and Start-WallpaperTray.ps1 remain legacy helpers for the private trial package, rather than public installation steps.
 
@@ -118,7 +122,7 @@ Probe exit 0 means complete; 1 means fatal; 2 means some API entries were unread
 - src/PrimaryWallpaperAgent.Core — display APIs, policy and engine.
 - src/PrimaryWallpaperAgent.Tray — tray, Settings, first-run and persistence.
 - src/PrimaryWallpaperAgent.Probe — read-only console and explicit diagnostics.
-- tests/PrimaryWallpaperAgent.Tests — 19 automated suites.
+- tests/PrimaryWallpaperAgent.Tests — 20 automated suites.
 - scripts — build, test, publish and diagnostics.
 - assets/branding — icons and reproducible source artwork.
 - docs/development and docs/testing — implementation and evidence.
@@ -130,7 +134,7 @@ Private settings, photos, monitor snapshots and trial plans are excluded from so
 
 The user previously verified primary switching, hotplug 3→1→3 and policy persistence across Virtual Desktops. On 20 October the user reported normal launch and expected wallpaper behavior. Detailed scenario results are still being collected. Physical-console mapping/recovery, projector, more than three physical displays, DPI transitions and startup after logon still need validation. Tests with 1/3/5 simulated displays do not establish hardware results.
 
-- [v0.5.1 release notes](docs/releases/v0.5.1.md)
+- [v0.5.2 release notes](docs/releases/v0.5.2.md)
 - [App themes and compact image selection](docs/testing/THEME-TEST.md)
 - [Recent picture recovery](docs/testing/RECENT-IMAGES-TEST.md)
 - [Deployment and startup](docs/development/DEPLOYMENT.md)

@@ -223,7 +223,7 @@ One static image is shared across virtual desktops. Spotlight is not supported.<
 
 Choose JPG, PNG or BMP (up to 32 MB and 40 million pixels). Selections apply immediately. Fill may crop image edges differently on different screens.
 
-Use primary image adopts the current Windows primary picture. Undo affects only the group being edited and is available until app exit. The four-picture recent library is shared; current pictures stay cached separately. The same settings apply across Virtual Desktops. Spotlight/slideshow are not supported.</value>
+While running, a settled new Windows primary picture is imported automatically and follows the primary role. During display transitions the saved role images are restored first. Choose secondary pictures only here; Windows changes on secondaries are replaced by this app's shared secondary choice. Use primary image imports the current primary immediately. Undo affects only the group being edited and is available until app exit. The four-picture recent library is shared; current pictures stay cached separately. The same settings apply across Virtual Desktops. Spotlight/slideshow are not supported; the watcher waits without forcing Windows mode.</value>
   </data>
   <data name="StartupHint">
     <value>Starts this app after you sign in to Windows, for this user account.
@@ -302,4 +302,7 @@ Changing this switch takes effect immediately. Keep the program in its chosen lo
   <data name="InvalidWallpaperTarget" xml:space="preserve"><value>Choose Primary display or All secondary displays.</value></data>
   <data name="BlackHint" xml:space="preserve"><value>Use black on every secondary display.</value></data>
   <data name="SecondaryImageSaved" xml:space="preserve"><value>Picture saved for all secondary displays, including ones connected later.</value></data>
+  <data name="StatusRetry" xml:space="preserve">
+    <value>Waiting · retrying automatically</value>
+  </data>
 </root>

@@ -53,6 +53,50 @@ internal sealed class LiveSettings(SettingsStore store, TrayConfig config, byte[
         }
         finally { IsApplying = false; }
     }
+    // Import only an observed current-primary image. This transaction neither
+    // writes wallpaper nor reads/writes startup registration.
+    internal void AdoptWindowsPrimary(SelectedImage image, ProbeResult observed)
+    {
+        if (IsApplying) throw new UiMessageException("SettingsBusy");
+        IsApplying = true;
+        try
+        {
+            EnsureUnchanged();
+            var before = Config;
+            var candidate = store.Prepare(Config, image, Config.StartWithWindows);
+            var candidateImages = store.Images(candidate);
+            var fresh = desktop.Capture();
+            _ = TrialEngine.Active(fresh);
+            if (fresh.Position != 4 || fresh.SlideshowStatus != 1 ||
+                fresh.SessionId != observed.SessionId || WallpaperGuard.Fingerprint(fresh) != WallpaperGuard.Fingerprint(observed))
+                throw new InvalidOperationException("Display or wallpaper changed before primary adoption; retrying.");
+            // Recheck both the file contents and settings immediately before commit.
+            if (SelectedImage.Read(image.SourcePath).Sha256 != image.Sha256)
+                throw new IOException("Primary image changed before adoption; retrying.");
+            EnsureUnchanged();
+            var encoded = JsonSerializer.SerializeToUtf8Bytes(candidate, SettingsStore.JsonOptions);
+            try
+            {
+                persistence.Write(encoded);
+                if (!persistence.Read().SequenceEqual(encoded)) throw new UiMessageException("SettingsReadbackFailed");
+            }
+            catch (Exception failure)
+            {
+                try
+                {
+                    persistence.Write(currentBytes);
+                    if (!persistence.Read().SequenceEqual(currentBytes)) throw new IOException("Primary adoption rollback readback failed.");
+                }
+                catch (Exception restore) { throw new AggregateException("Primary adoption settings recovery is incomplete.", failure, restore); }
+                throw;
+            }
+            previousImages[WallpaperTarget.Primary] = before;
+            Config = candidate; Images = candidateImages; currentBytes = encoded;
+            LastChangeMayResume = false;
+            log("WINDOWS_PRIMARY_ADOPTED; sha256=" + image.Sha256 + "; secondary and preferences preserved; startupTouched=False");
+        }
+        finally { IsApplying = false; }
+    }
     internal SelectedImage UndoImage() => UndoImage(WallpaperTarget.Primary);
     internal SelectedImage UndoImage(WallpaperTarget target)
     {

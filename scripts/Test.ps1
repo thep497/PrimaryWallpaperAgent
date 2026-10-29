@@ -4,7 +4,7 @@ param([switch]$SkipBuild)
 if (-not $SkipBuild) { & (Join-Path $PSScriptRoot 'Build.ps1') -Configuration Debug }
 $testPath = Join-Path $script:ProjectRoot 'artifacts\bin\PrimaryWallpaperAgent.Tests\debug\PrimaryWallpaperAgent.Tests.exe'
 if (-not (Test-Path -LiteralPath $testPath -PathType Leaf)) { throw 'Build the solution before running tests.' }
-foreach ($suite in @('policy','secondary','config','compatibility','localization','polling','branding','instant','compact','recent','theme','hotplug','diagnostics','dpi','release','maintenance','instance','update')) {
+foreach ($suite in @('policy','secondary','config','compatibility','localization','polling','branding','instant','compact','recent','theme','hotplug','recovery','diagnostics','dpi','release','maintenance','instance','update')) {
     & $testPath $suite
     if ($LASTEXITCODE -ne 0) { throw "Test suite failed: $suite ($LASTEXITCODE)" }
 }
@@ -13,4 +13,4 @@ foreach ($suite in @('policy','secondary','config','compatibility','localization
 $testProcess = Start-Process -FilePath $testPath -ArgumentList 'window' -WindowStyle Hidden -PassThru
 if (-not $testProcess.WaitForExit(15000)) { throw "Window test timed out; PID=$($testProcess.Id)" }
 if ($testProcess.ExitCode -ne 0) { throw "Window test failed: $($testProcess.ExitCode)" }
-Write-Host 'Policy, configuration/compatibility, localization, polling, branding, instant/compact settings, release bootstrap, maintenance, cross-process activation, signed updates, recent pictures, app themes, hotplug recovery, diagnostics/export, DPI and native window visibility tests passed.'
+Write-Host 'All 20 suites passed: policy/secondary, configuration/compatibility, localization, polling, branding, instant/compact settings, release bootstrap, maintenance, cross-process activation, signed updates, recent pictures, app themes, hotplug, automatic recovery, diagnostics/export, DPI and native window visibility.'

@@ -9,7 +9,8 @@ internal sealed class PolicyConflictException(string message) : InvalidOperation
 
 internal static class WallpaperPolicy
 {
-    internal static bool Repair(PolicyImages images, ProbeResult current, ITrialDesktop desktop, Action<string> log, ProbeResult? acceptedTopology = null)
+    internal static bool Repair(PolicyImages images, ProbeResult current, ITrialDesktop desktop, Action<string> log,
+        ProbeResult? acceptedTopology = null, bool enforceSavedRoles = false, string? primaryAlias = null)
     {
         var active = TrialEngine.Active(current);
         if (current.Position != 4 || current.SlideshowStatus != 1)
@@ -22,11 +23,17 @@ internal static class WallpaperPolicy
         var monitorSetChanged = acceptedTopology is not null && acceptedTopology.SessionId == current.SessionId &&
             !TrialEngine.Active(acceptedTopology).Select(w => w.MonitorId).ToHashSet(StringComparer.OrdinalIgnoreCase)
                 .SetEquals(active.Select(w => w.MonitorId));
-        if (unfamiliar && !monitorSetChanged)
+        if (unfamiliar && !monitorSetChanged && !enforceSavedRoles)
             throw new PolicyConflictException("Wallpaper differs from the current chosen image. Paused to preserve your choice, even if used previously.");
         if (monitorSetChanged)
             log($"HOTPLUG_REBASE; active={active.Length}; unfamiliarWallpaper={unfamiliar}; current Windows primary");
-        var plan = new TrialPlan(1, "tray", images.PhotoPath, images.PhotoPath, images.PhotoSha256,
+        // The watcher may preserve a byte-verified Windows alias of the primary.
+        // Strict callers retain the original unfamiliar-image boundary.
+        if (primaryAlias is not null && !StringComparer.OrdinalIgnoreCase.Equals(primaryAlias,
+            active.Single(w => w.IsPrimary == true).WallpaperPath))
+            throw new InvalidOperationException("The verified primary alias is no longer the observed primary image.");
+        var primaryPath = primaryAlias ?? images.PhotoPath;
+        var plan = new TrialPlan(1, "tray", primaryPath, primaryPath, images.PhotoSha256,
             images.SecondaryPath, images.SecondarySha256, current);
         if (TrialEngine.Matches(plan, current, restored: false)) return false;
         // Apply captures and validates again before each write, verifies readback,

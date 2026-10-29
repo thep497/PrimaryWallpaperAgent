@@ -284,6 +284,13 @@ internal sealed class ConfigForm : Form
         }, "SettingsSaved");
     }
 
+    internal void RefreshPrimaryImage(SelectedImage image)
+    {
+        roleImages[WallpaperTarget.Primary] = image;
+        if (target == WallpaperTarget.Primary) selected = image;
+        ShowSelected(); RefreshAgentState();
+    }
+
     internal void RefreshAgentState()
     {
         if (IsDisposed || Disposing) return;
